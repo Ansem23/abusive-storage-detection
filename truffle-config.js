@@ -9,7 +9,7 @@ module.exports = {
   networks: {
     development: {
       host: "127.0.0.1",
-      port: localConfig.port || 7545, // Default: 7545
+      port: localConfig.port || 8545, // Default: 7545
       network_id: localConfig.network_id || "*", // Default: any network
     }
   }
