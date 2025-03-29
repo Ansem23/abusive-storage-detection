@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MilkSupplyChain is Ownable {
@@ -45,11 +44,12 @@ contract MilkSupplyChain is Ownable {
         _;
     }
     
-    constructor() Ownable(msg.sender) {
+      constructor() Ownable(msg.sender) {
         // first admin
         isAdmin[msg.sender] = true;
         emit AdminAdded(msg.sender);
     }
+
     
     function addAdmin(address account) external onlyAdmin {
         require(!isAdmin[account], "Address is already an admin");
