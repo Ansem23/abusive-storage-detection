@@ -165,7 +165,7 @@ const Settings = () => {
         setCurrentAccount(accts[0]);
         
         // Initialize contract instance
-        const contractAddress = '0xDef6807E1bCB95AcB17aCB348a6B2B5aA12aE1c0';
+        const contractAddress = '0xf6E8356bA0Bc07eeaa3AC6450E3CbEcE1386010c';
         const contractInstance = new web3Instance.eth.Contract(contractABI, contractAddress);
         setContract(contractInstance);
         
