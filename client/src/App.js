@@ -1,52 +1,34 @@
-import React, { useEffect, useState } from "react";
-import Web3 from "web3";
-import MilkSupplyChain from "./contracts/MilkSupplyChain.json";
-import Topbar from "./components/Topbar";
+// App.js
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
+import Dashboard from "./pages/Dashboard";
+import Settings from "./pages/Settings";
+import Alertes from "./pages/Alertes";
+import Batches from "./pages/Batches";
+import Stocks from "./pages/Stocks";
+import Transactions from "./pages/Transactions";
+import { AppProvider } from "./context/AppContext";
 
 function App() {
-  const [account, setAccount] = useState("");
-  const [contract, setContract] = useState(null);
-  const [web3, setWeb3] = useState(null);
-
-  useEffect(() => {
-    const init = async () => {
-      const web3 = new Web3("http://127.0.0.1:7545");
-      setWeb3(web3);
-
-      const accounts = await web3.eth.getAccounts();
-      setAccount(accounts[0]);
-
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = MilkSupplyChain.networks[networkId];
-
-      if (deployedNetwork) {
-        const instance = new web3.eth.Contract(
-          MilkSupplyChain.abi,
-          deployedNetwork.address
-        );
-        setContract(instance);
-      } else {
-        alert("Contrat non déployé sur ce réseau.");
-      }
-    };
-
-    init();
-  }, []);
-
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex flex-col flex-grow">
-        <Topbar />
-        <main className="flex-grow p-6">
-          <h1 className="text-2xl font-semibold mb-4">Bienvenue !</h1>
-          <p className="text-gray-700">
-            ✅ Compte connecté : <strong>{account}</strong>
-          </p>
-        </main>
-      </div>
-    </div>
+    <AppProvider>
+      <Router>
+        <div className="flex min-h-screen bg-gray-100">
+          <Sidebar />
+          <div className="flex-1 p-6">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/alerts" element={<Alertes />} />
+              <Route path="/batches" element={<Batches />} />
+              <Route path="/stocks" element={<Stocks />} />
+              <Route path="/transactions" element={<Transactions />} />
+            </Routes>
+          </div>
+        </div>
+      </Router>
+    </AppProvider>
   );
 }
 

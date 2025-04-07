@@ -1,25 +1,38 @@
+// src/components/Sidebar.js
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
 
-function Sidebar() {
+const menuItems = [
+  { name: "Dashboard", path: "/" },
+  { name: "Stocks", path: "/stocks" },
+  { name: "Batches", path: "/batches" },
+  { name: "Transactions", path: "/transactions" },
+  { name: "Alerts", path: "/alerts" },
+  { name: "Settings", path: "/settings" },
+];
+
+const Sidebar = () => {
+  const location = useLocation();
+
   return (
-    <aside className="w-64 bg-white shadow-md h-full">
-      <div className="p-6 font-bold text-lg text-blue-600">MilkChain</div>
-      <nav className="px-4 space-y-2">
-        <a href="#" className="block text-gray-700 hover:text-blue-500">
-          🏠 Dashboard
-        </a>
-        <a href="#" className="block text-gray-700 hover:text-blue-500">
-          📦 Stocks
-        </a>
-        <a href="#" className="block text-gray-700 hover:text-blue-500">
-          🔁 Transactions
-        </a>
-        <a href="#" className="block text-gray-700 hover:text-blue-500">
-          ⚙️ Paramètres
-        </a>
-      </nav>
-    </aside>
+    <div className="w-64 h-screen bg-white shadow-md p-5 border-r">
+      <h2 className="text-2xl font-bold text-blue-700 mb-6">MilkChain</h2>
+      <ul className="space-y-4">
+        {menuItems.map((item) => (
+          <li key={item.name}>
+            <Link
+              to={item.path}
+              className={`block px-4 py-2 rounded-lg hover:bg-blue-100 transition ${
+                location.pathname === item.path ? "bg-blue-200 font-semibold" : ""
+              }`}
+            >
+              {item.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
-}
+};
 
 export default Sidebar;

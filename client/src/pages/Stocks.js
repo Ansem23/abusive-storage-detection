@@ -18,7 +18,7 @@ const Stocks = () => {
 
       <div className="bg-white shadow-md rounded-xl p-6 max-w-lg">
         <div className="mb-4">
-          <label className="block font-semibold mb-2">Quantité (en litres)</label>
+          <label className="block font-semibold mb-2">quantity (L)</label>
           <input
             type="number"
             className="w-full border rounded-lg px-4 py-2"
@@ -29,7 +29,7 @@ const Stocks = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block font-semibold mb-2">Adresse du destinataire</label>
+          <label className="block font-semibold mb-2">destination's address</label>
           <input
             type="text"
             className="w-full border rounded-lg px-4 py-2"
@@ -43,7 +43,7 @@ const Stocks = () => {
           onClick={handleTransfer}
           className="bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition"
         >
-          🚚 Transférer
+          🚚 Transfer
         </button>
       </div>
     </div>

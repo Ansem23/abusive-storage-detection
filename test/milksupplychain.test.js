@@ -5,9 +5,9 @@ contract("MilkSupplyChain", (accounts) => {
   let instance;
 
   beforeEach(async () => {
-    instance = await MilkSupplyChain.new(); // admin est déjà owner + admin
+    instance = await MilkSupplyChain.new({ from: admin }); // admin est déjà owner + admin
     await instance.setProducer(producer, { from: admin });
-    await instance.setReseller(reseller, { from: admin });
+    await instance.setReseller(reseller, 1000, { from: admin }); // 👈 Ajoute maxQuantity
   });
 
   it("should produce milk successfully", async () => {
@@ -18,7 +18,10 @@ contract("MilkSupplyChain", (accounts) => {
 
   it("should transfer stock to reseller", async () => {
     await instance.produce(200, { from: producer });
-    await instance.transferStock(reseller, 50, { from: producer });
+
+    // 👇 on utilise le batchId retourné implicitement
+    await instance.transferStock(reseller, 50, 0, { from: producer });
+
     const resellerStock = await instance.stockBalance(reseller);
     assert.equal(resellerStock.toString(), "50", "Reseller should have 50");
   });
