@@ -30,6 +30,7 @@ export default Settings;*/
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, X } from 'lucide-react';
 import Web3 from 'web3';
+import { ethers } from 'ethers';
 
 // Contract ABI - only including the functions we need for role management
 const contractABI = [
@@ -136,7 +137,6 @@ const Settings = () => {
   // State management
   const [web3, setWeb3] = useState(null);
   const [contract, setContract] = useState(null);
-  const [accounts, setAccounts] = useState([]);
   const [currentAccount, setCurrentAccount] = useState('');
   const [address, setAddress] = useState('');
   const [addressRoles, setAddressRoles] = useState({
@@ -160,9 +160,12 @@ const Settings = () => {
         setWeb3(web3Instance);
         
         // Get accounts
-        const accts = await web3Instance.eth.getAccounts();
-        setAccounts(accts);
-        setCurrentAccount(accts[0]);
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = ethersProvider.getSigner();
+                const userAddress = await signer.getAddress();
+                
+                setCurrentAccount(userAddress);
         
         // Initialize contract instance
         const contractAddress = '0xf6E8356bA0Bc07eeaa3AC6450E3CbEcE1386010c';
@@ -459,26 +462,12 @@ const Settings = () => {
         </span>
       </div>
       
-      {/* Account Selector */}
-      {accounts.length > 0 && (
+      
         <div className="mb-6">
           <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
-            Select Your Account (For Transactions)
+            Your current account : {currentAccount}
           </label>
-          <select
-            id="account"
-            value={currentAccount}
-            onChange={handleAccountChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          >
-            {accounts.map((account, index) => (
-              <option key={index} value={account}>
-                {account}
-              </option>
-            ))}
-          </select>
         </div>
-      )}
       
       {/* Alert for action status */}
       {actionStatus.message && (
