@@ -1,50 +1,23 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/components/Header.js
+import React from "react";
 
 const Header = () => {
-  const navigate = useNavigate();
-
   return (
-    <div className="bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div 
-            className="flex items-center space-x-3 cursor-pointer" 
-            onClick={() => navigate('/')}
-          >
-            <img
-              src="/stockguardlogo.png"
-              alt="StockGuard"
-              className="h-10 w-10"
-            />
-            <span className="text-xl font-bold text-blue-800 hover:text-blue-600">
-              StockGuard
-            </span>
-          </div>
-          
-          <div className="flex space-x-4">
-            <button 
-              onClick={() => navigate('/')}
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={() => navigate('/transactions')}
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Transactions
-            </button>
-            <button 
-              onClick={() => navigate('/settings')}
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Settings
-            </button>
-          </div>
-        </div>
+    <header className="bg-gradient-to-r from-blue-900 to-blue-600 text-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center space-x-3">
+        {/* Logo */}
+        <img
+          src="/stockguardlogo.png"
+          alt="StockGuard"
+          className="h-10 w-10 rounded"
+        />
+
+        {/* Branding */}
+        <h1 className="text-xl font-bold tracking-wide">
+          StockGuard
+        </h1>
       </div>
-    </div>
+    </header>
   );
 };
 
