@@ -41,7 +41,7 @@ const MilkSupplyDashboard = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Contract address from your input
-  const contractAddress = "0x0fD920Cb80F16674cF43eA9fA6d2Ee63CefA29b1";
+  const contractAddress = "0x83b8CDBD920642B2C1F8995C1DD190E63E7aC389";
 
   // Initialize and connect to the contract
   useEffect(() => {
@@ -415,5 +415,5 @@ const MilkSupplyDashboard = () => {
     </div>
   );
 };
-
+//un commentaire pour tester le commit
 export default MilkSupplyDashboard;
