@@ -10,7 +10,7 @@ const MilkTransactionHistory = () => {
   const [contract, setContract] = useState(null);
 
   // Contract address from your previous input
-  const contractAddress = "0xf6E8356bA0Bc07eeaa3AC6450E3CbEcE1386010c";
+  const contractAddress = "0x0fD920Cb80F16674cF43eA9fA6d2Ee63CefA29b1";
   
   // ABI with event definitions - we specifically need the Transferred event
   const contractABI = [

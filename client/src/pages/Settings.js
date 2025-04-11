@@ -1,656 +1,419 @@
-/*import React from "react";
-
-const Settings = () => {
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">⚙️ Settings</h2>
-
-      <div className="grid gap-4">
-        <div className="bg-white p-4 shadow rounded">
-          <h3 className="font-bold mb-2">Notification Threshold</h3>
-          <input
-            type="number"
-            placeholder="Set abusive stock limit"
-            className="border border-gray-300 p-2 rounded w-full"
-          />
-        </div>
-
-        <div className="bg-white p-4 shadow rounded">
-          <h3 className="font-bold mb-2">Account Management</h3>
-          <button className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-            Remove My Admin Role
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Settings;*/
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, X } from 'lucide-react';
-import Web3 from 'web3';
 import { ethers } from 'ethers';
+import Header from '../components/Header';
+import Topbar from '../components/Topbar';
 
-// Contract ABI - only including the functions we need for role management
+// Contract ABI extracted from the smart contract
 const contractABI = [
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "isAdmin",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "isProducer",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "isReseller",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "maxQuantityPerReseller",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "blacklistedHolders",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "addAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "removeAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "account", "type": "address"},
-      {"internalType": "uint256", "name": "maxQuantity", "type": "uint256"}
-    ],
-    "name": "setReseller",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "account", "type": "address"},
-      {"internalType": "uint256", "name": "maxQuantity", "type": "uint256"}
-    ],
-    "name": "changeMaxQuantityReseller",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "removeReseller",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "setProducer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "removeProducer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "holder", "type": "address"}],
-    "name": "removeFromBlacklist",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
+  "function isAdmin(address) view returns (bool)",
+  "function isProducer(address) view returns (bool)",
+  "function isReseller(address) view returns (bool)",
+  "function stockBalance(address) view returns (uint256)",
+  "function blacklistedHolders(address) view returns (bool)",
+  "function getBatchesByOwner(address) view returns (uint256[])",
+  "function batches(uint256) view returns (uint256, address, uint256, uint256, address, bool)",
+  "function getActiveViolationsByHolder(address) view returns (uint256[])",
+  "function produce(uint256)",
+  "function transferStock(address, uint256, uint256)",
+  "function maxQuantityPerReseller(address) view returns (uint256)"
 ];
 
-const Settings = () => {
-  // State management
-  const [web3, setWeb3] = useState(null);
+const MilkSupplyDashboard = () => {
+  // State variables
+  const [account, setAccount] = useState('');
   const [contract, setContract] = useState(null);
-  const [currentAccount, setCurrentAccount] = useState('');
-  const [address, setAddress] = useState('');
-  const [addressRoles, setAddressRoles] = useState({
-    isAdmin: false,
-    isProducer: false,
-    isReseller: false,
-    maxQuantity: 0,
-    isBlacklisted: false
-  });
-  const [loading, setLoading] = useState(false);
-  const [actionStatus, setActionStatus] = useState({ type: '', message: '' });
-  const [addressChecked, setAddressChecked] = useState(false);
-  const [newMaxQuantity, setNewMaxQuantity] = useState(0);
+  const [userRoles, setUserRoles] = useState({ isAdmin: false, isProducer: false, isReseller: false });
+  const [stockBalance, setStockBalance] = useState(0);
+  const [maxQuantity, setMaxQuantity] = useState(0);
+  const [batchIds, setBatchIds] = useState([]);
+  const [batchDetails, setBatchDetails] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [isBlacklisted, setIsBlacklisted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [transactionPending, setTransactionPending] = useState(false);
 
-  // Connect to Web3 and initialize the contract
+  // Form states
+  const [produceQuantity, setProduceQuantity] = useState('');
+  const [selectedBatchId, setSelectedBatchId] = useState('');
+  const [transferQuantity, setTransferQuantity] = useState('');
+  const [transferTo, setTransferTo] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Contract address from your input
+  const contractAddress = "0x0fD920Cb80F16674cF43eA9fA6d2Ee63CefA29b1";
+
+  // Initialize and connect to the contract
   useEffect(() => {
-    const initWeb3 = async () => {
+    const init = async () => {
       try {
-        // Initialize Web3 with Ganache RPC
-        const web3Instance = new Web3('http://127.0.0.1:7545');
-        setWeb3(web3Instance);
-        
-        // Get accounts
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
-                const signer = ethersProvider.getSigner();
-                const userAddress = await signer.getAddress();
-                
-                setCurrentAccount(userAddress);
-        
-        // Initialize contract instance
-        const contractAddress = '0xf6E8356bA0Bc07eeaa3AC6450E3CbEcE1386010c';
-        const contractInstance = new web3Instance.eth.Contract(contractABI, contractAddress);
-        setContract(contractInstance);
-        
-        setActionStatus({
-          type: 'success',
-          message: 'Connected to Ganache successfully'
-        });
-      } catch (error) {
-        console.error("Error initializing Web3:", error);
-        setActionStatus({
-          type: 'error',
-          message: `Failed to connect to Ganache: ${error.message}`
-        });
+        setErrorMessage('');
+        setSuccessMessage('');
+        setLoading(true);
+
+        if (window.ethereum) {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+          const userAddress = await signer.getAddress();
+
+          setAccount(userAddress);
+
+          const milkContract = new ethers.Contract(contractAddress, contractABI, signer);
+          setContract(milkContract);
+
+          await loadUserData(milkContract, userAddress);
+
+          window.ethereum.on('accountsChanged', async (accounts) => {
+            setAccount(accounts[0]);
+            await loadUserData(milkContract, accounts[0]);
+          });
+        } else {
+          setErrorMessage("Please install MetaMask to use this dApp");
+        }
+      } catch (err) {
+        console.error("Initialization error:", err);
+        setErrorMessage("Failed to connect: " + err.message);
+      } finally {
+        setLoading(false);
       }
     };
-    
-    initWeb3();
-  }, []);
 
-  // Check roles from blockchain
-  const checkRoles = async () => {
-    if (!web3 || !contract) {
-      setActionStatus({
-        type: 'error',
-        message: 'Web3 not initialized. Please refresh the page.'
+    init();
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeAllListeners('accountsChanged');
+      }
+    };
+  }, [contractAddress]);
+
+  // Load all user data from the contract
+  const loadUserData = async (contractInstance, userAddress) => {
+    try {
+      const adminStatus = await contractInstance.isAdmin(userAddress);
+      const producerStatus = await contractInstance.isProducer(userAddress);
+      const resellerStatus = await contractInstance.isReseller(userAddress);
+
+      setUserRoles({
+        isAdmin: adminStatus,
+        isProducer: producerStatus,
+        isReseller: resellerStatus
       });
+
+      const balance = await contractInstance.stockBalance(userAddress);
+      setStockBalance(balance.toString());
+
+      const blacklistStatus = await contractInstance.blacklistedHolders(userAddress);
+      setIsBlacklisted(blacklistStatus);
+
+      const batches = await contractInstance.getBatchesByOwner(userAddress);
+      setBatchIds(batches.map(b => b.toString()));
+
+      const details = await Promise.all(
+        batches.map(async (id) => {
+          const batch = await contractInstance.batches(id);
+          return {
+            id: id.toString(),
+            producer: batch[1],
+            quantity: batch[2].toString(),
+            timestamp: new Date(batch[3].toNumber() * 1000).toLocaleString(),
+            currentOwner: batch[4],
+            expired: batch[5]
+          };
+        })
+      );
+      setBatchDetails(details);
+
+      const violations = await contractInstance.getActiveViolationsByHolder(userAddress);
+      setAlerts(violations.map(v => v.toString()));
+
+      if (resellerStatus) {
+        const max = await contractInstance.maxQuantityPerReseller(userAddress);
+        setMaxQuantity(max.toString());
+      }
+    } catch (err) {
+      console.error("Error loading user data:", err);
+      setErrorMessage("Failed to load data: " + err.message);
+    }
+  };
+
+  // Produce milk (for producers)
+  const handleProduce = async () => {
+    if (!produceQuantity || parseInt(produceQuantity) <= 0) {
+      setErrorMessage("Please enter a valid quantity");
       return;
     }
-    
-    if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
-      setActionStatus({
-        type: 'error',
-        message: 'Please enter a valid Ethereum address'
-      });
+
+    try {
+      setTransactionPending(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      const tx = await contract.produce(produceQuantity);
+      await tx.wait();
+
+      setSuccessMessage(`Successfully produced ${produceQuantity} units of milk`);
+      setProduceQuantity('');
+
+      await loadUserData(contract, account);
+    } catch (err) {
+      console.error("Production error:", err);
+      setErrorMessage("Transaction failed: " + (err.reason || err.message));
+    } finally {
+      setTransactionPending(false);
+    }
+  };
+
+  // Transfer stock to another address
+  const handleTransfer = async () => {
+    if (!transferTo || !ethers.utils.isAddress(transferTo)) {
+      setErrorMessage("Please enter a valid recipient address");
       return;
     }
 
-    setLoading(true);
-    
+    if (!selectedBatchId) {
+      setErrorMessage("Please select a batch to transfer");
+      return;
+    }
+
+    if (!transferQuantity || parseInt(transferQuantity) <= 0) {
+      setErrorMessage("Please enter a valid quantity");
+      return;
+    }
+
     try {
-      // Call contract methods to get role information
-      const [isAdmin, isProducer, isReseller, maxQuantity, isBlacklisted] = await Promise.all([
-        contract.methods.isAdmin(address).call(),
-        contract.methods.isProducer(address).call(),
-        contract.methods.isReseller(address).call(),
-        contract.methods.maxQuantityPerReseller(address).call(),
-        contract.methods.blacklistedHolders(address).call()
-      ]);
-      
-      setAddressRoles({
-        isAdmin,
-        isProducer,
-        isReseller,
-        maxQuantity: parseInt(maxQuantity),
-        isBlacklisted
-      });
-      
-      setAddressChecked(true);
-      setActionStatus({
-        type: 'success',
-        message: 'Address roles retrieved successfully'
-      });
-    } catch (error) {
-      console.error("Error checking roles:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to check roles: ${error.message}`
-      });
+      setTransactionPending(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      const tx = await contract.transferStock(transferTo, transferQuantity, selectedBatchId);
+      await tx.wait();
+
+      setSuccessMessage(`Successfully transferred ${transferQuantity} units to ${transferTo}`);
+      setTransferTo('');
+      setTransferQuantity('');
+      setSelectedBatchId('');
+
+      await loadUserData(contract, account);
+    } catch (err) {
+      console.error("Transfer error:", err);
+      setErrorMessage("Transaction failed: " + (err.reason || err.message));
     } finally {
-      setLoading(false);
+      setTransactionPending(false);
     }
   };
 
-  // Add admin role
-  const addAdmin = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.addAdmin(address).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, isAdmin: true }));
-      setActionStatus({
-        type: 'success',
-        message: 'Admin role added successfully'
-      });
-    } catch (error) {
-      console.error("Error adding admin:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to add admin: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Remove admin role
-  const removeAdmin = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.removeAdmin(address).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, isAdmin: false }));
-      setActionStatus({
-        type: 'success',
-        message: 'Admin role removed successfully'
-      });
-    } catch (error) {
-      console.error("Error removing admin:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to remove admin: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add producer role
-  const addProducer = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.setProducer(address).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, isProducer: true }));
-      setActionStatus({
-        type: 'success',
-        message: 'Producer role added successfully'
-      });
-    } catch (error) {
-      console.error("Error adding producer:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to add producer: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Remove producer role
-  const removeProducer = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.removeProducer(address).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, isProducer: false }));
-      setActionStatus({
-        type: 'success',
-        message: 'Producer role removed successfully'
-      });
-    } catch (error) {
-      console.error("Error removing producer:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to remove producer: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add reseller role
-  const addReseller = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.setReseller(address, newMaxQuantity).send({ from: currentAccount });
-      setAddressRoles(prev => ({ 
-        ...prev, 
-        isReseller: true,
-        maxQuantity: newMaxQuantity
-      }));
-      setActionStatus({
-        type: 'success',
-        message: 'Reseller role added successfully'
-      });
-    } catch (error) {
-      console.error("Error adding reseller:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to add reseller: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Remove reseller role
-  const removeReseller = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.removeReseller(address).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, isReseller: false }));
-      setActionStatus({
-        type: 'success',
-        message: 'Reseller role removed successfully'
-      });
-    } catch (error) {
-      console.error("Error removing reseller:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to remove reseller: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update max quantity for reseller
-  const updateMaxQuantity = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.changeMaxQuantityReseller(address, newMaxQuantity).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, maxQuantity: newMaxQuantity }));
-      setActionStatus({
-        type: 'success',
-        message: `Max quantity updated to ${newMaxQuantity}`
-      });
-    } catch (error) {
-      console.error("Error updating max quantity:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to update max quantity: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Remove from blacklist
-  const removeFromBlacklist = async () => {
-    if (!contract || !currentAccount) return;
-    
-    setLoading(true);
-    try {
-      await contract.methods.removeFromBlacklist(address).send({ from: currentAccount });
-      setAddressRoles(prev => ({ ...prev, isBlacklisted: false }));
-      setActionStatus({
-        type: 'success',
-        message: 'Address removed from blacklist'
-      });
-    } catch (error) {
-      console.error("Error removing from blacklist:", error);
-      setActionStatus({
-        type: 'error',
-        message: `Failed to remove from blacklist: ${error.message}`
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Reset the form
-  const resetForm = () => {
-    setAddress('');
-    setAddressRoles({
-      isAdmin: false,
-      isProducer: false,
-      isReseller: false,
-      maxQuantity: 0,
-      isBlacklisted: false
-    });
-    setAddressChecked(false);
-    setActionStatus({ type: '', message: '' });
-    setNewMaxQuantity(0);
-  };
-
-  // Handle account change
-  const handleAccountChange = (e) => {
-    setCurrentAccount(e.target.value);
+  // Helper function to display role
+  const getUserRole = () => {
+    if (userRoles.isAdmin) return "Admin";
+    if (userRoles.isProducer && userRoles.isReseller) return "Producer & Reseller";
+    if (userRoles.isProducer) return "Producer";
+    if (userRoles.isReseller) return "Reseller";
+    return "No assigned role";
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white rounded-xl shadow-md">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Milk Supply Chain Role Management</h1>
-      
-      {/* Connection Status */}
-      <div className="mb-4 flex items-center">
-        <span className={`inline-block w-3 h-3 rounded-full mr-2 ${web3 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-        <span className="text-sm font-medium">
-          {web3 ? 'Connected to Ganache' : 'Not connected to Ganache'}
-        </span>
-      </div>
-      
-      
-        <div className="mb-6">
-          <label htmlFor="account" className="block text-sm font-medium text-gray-700 mb-1">
-            Your current account : {currentAccount}
-          </label>
-        </div>
-      
-      {/* Alert for action status */}
-      {actionStatus.message && (
-        <div className={`mb-4 p-4 rounded-md flex items-center justify-between ${
-          actionStatus.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
-        }`}>
-          <div className="flex items-center">
-            {actionStatus.type === 'error' ? (
-              <AlertCircle className="h-5 w-5 mr-2" />
-            ) : (
-              <CheckCircle className="h-5 w-5 mr-2" />
-            )}
-            <span>{actionStatus.message}</span>
-          </div>
-          <button onClick={() => setActionStatus({ type: '', message: '' })}>
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      )}
-      
-      {/* Address input section */}
-      <div className="mb-6">
-        <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-          Check Address Roles
-        </label>
-        <div className="flex">
-          <input
-            type="text"
-            id="address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="0x..."
-            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
-          />
-          <button
-            onClick={checkRoles}
-            disabled={loading || !web3}
-            className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 disabled:bg-blue-300"
-          >
-            {loading ? 'Checking...' : 'Check Roles'}
-          </button>
-        </div>
-      </div>
-      
-      {/* Role display and management section */}
-      {addressChecked && (
-        <div className="border rounded-md p-4 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Current Roles for {address.substring(0, 6)}...{address.substring(address.length - 4)}</h2>
-          
-          {addressRoles.isBlacklisted && (
-            <div className="bg-red-100 text-red-800 p-3 mb-4 rounded-md flex justify-between items-center">
-              <span className="font-medium">⚠️ This address is blacklisted</span>
-              <button
-                onClick={removeFromBlacklist}
-                disabled={loading || !web3}
-                className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 disabled:bg-red-300 text-sm"
-              >
-                Remove from Blacklist
-              </button>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <Topbar account={account} role={getUserRole()} />
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="bg-white shadow rounded-lg p-6">
+          {loading ? (
+            <div className="text-center py-10">
+              <p className="text-gray-600">Loading dashboard data...</p>
             </div>
+          ) : (
+            <>
+              {errorMessage && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                  {errorMessage}
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                  {successMessage}
+                </div>
+              )}
+
+              {/* User Info Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Connected Address</h3>
+                  <p className="text-gray-700 truncate">{account}</p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Role</h3>
+                  <p className="text-gray-700">{getUserRole()}</p>
+                  {isBlacklisted && <p className="text-red-600 font-bold mt-1">BLACKLISTED</p>}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Total Stock</h3>
+                  <p className="text-gray-700">{stockBalance} units</p>
+                  {userRoles.isReseller && (
+                    <p className="text-xs text-gray-500 mt-1">Max allowed: {maxQuantity} units</p>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Alerts</h3>
+                  <p className="text-gray-700">{alerts.length} active alerts</p>
+                </div>
+              </div>
+
+              {/* Action Panels */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Producer Panel */}
+                {userRoles.isProducer && (
+                  <div className="bg-white border rounded-lg p-4 shadow-sm">
+                    <h2 className="text-lg font-semibold text-blue-800 mb-4">Produce New Batch</h2>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Quantity</label>
+                      <input
+                        type="number"
+                        value={produceQuantity}
+                        onChange={(e) => setProduceQuantity(e.target.value)}
+                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                        placeholder="Enter quantity"
+                        disabled={transactionPending || isBlacklisted}
+                      />
+                    </div>
+                    <button
+                      onClick={handleProduce}
+                      disabled={transactionPending || isBlacklisted}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded disabled:opacity-50"
+                    >
+                      {transactionPending ? "Processing..." : "Produce Milk"}
+                    </button>
+                    {isBlacklisted && (
+                      <p className="text-red-600 text-sm mt-2">
+                        You cannot produce while blacklisted
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Reseller Panel */}
+                {(userRoles.isReseller || userRoles.isProducer) && (
+                  <div className="bg-white border rounded-lg p-4 shadow-sm">
+                    <h2 className="text-lg font-semibold text-blue-800 mb-4">Transfer Stock</h2>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Select Batch</label>
+                      <select
+                        value={selectedBatchId}
+                        onChange={(e) => setSelectedBatchId(e.target.value)}
+                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                        disabled={transactionPending || isBlacklisted}
+                      >
+                        <option value="">Select a batch</option>
+                        {batchDetails.map((batch) => (
+                          <option key={batch.id} value={batch.id}>
+                            Batch #{batch.id} - {batch.quantity} units
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Transfer To (Address)</label>
+                      <input
+                        type="text"
+                        value={transferTo}
+                        onChange={(e) => setTransferTo(e.target.value)}
+                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                        placeholder="0x..."
+                        disabled={transactionPending || isBlacklisted}
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-gray-700 mb-2">Quantity</label>
+                      <input
+                        type="number"
+                        value={transferQuantity}
+                        onChange={(e) => setTransferQuantity(e.target.value)}
+                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                        placeholder="Enter quantity"
+                        disabled={transactionPending || isBlacklisted}
+                      />
+                    </div>
+                    <button
+                      onClick={handleTransfer}
+                      disabled={transactionPending || isBlacklisted}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded disabled:opacity-50"
+                    >
+                      {transactionPending ? "Processing..." : "Transfer Stock"}
+                    </button>
+                    {isBlacklisted && (
+                      <p className="text-red-600 text-sm mt-2">
+                        You cannot transfer while blacklisted
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Batches Table */}
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-blue-800 mb-4">My Batches</h2>
+                {batchDetails.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white border rounded-lg overflow-hidden">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="py-3 px-4 text-left">ID</th>
+                          <th className="py-3 px-4 text-left">Producer</th>
+                          <th className="py-3 px-4 text-left">Quantity</th>
+                          <th className="py-3 px-4 text-left">Created</th>
+                          <th className="py-3 px-4 text-left">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batchDetails.map((batch) => (
+                          <tr key={batch.id} className="border-t hover:bg-gray-50">
+                            <td className="py-3 px-4">{batch.id}</td>
+                            <td className="py-3 px-4 truncate max-w-xs">{batch.producer}</td>
+                            <td className="py-3 px-4">{batch.quantity} units</td>
+                            <td className="py-3 px-4">{batch.timestamp}</td>
+                            <td className="py-3 px-4">
+                              {batch.expired ? (
+                                <span className="text-red-600">Expired</span>
+                              ) : (
+                                <span className="text-green-600">Active</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">You don't have any batches yet.</p>
+                )}
+              </div>
+
+              {/* Alerts Section */}
+              {alerts.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-blue-800 mb-4">Alerts & Violations</h2>
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                    <p className="text-red-700 font-medium mb-2">
+                      You have {alerts.length} active storage violation{alerts.length !== 1 && 's'}
+                    </p>
+                    <p className="text-gray-700 text-sm">
+                      Contact an administrator to resolve these violations. 
+                      Accumulating {isBlacklisted ? 'more ' : ''} violations may result in blacklisting.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {/* Admin Role */}
-            <div className="border rounded-md p-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium">Admin</h3>
-                  <p className="text-sm text-gray-600">Current status: {addressRoles.isAdmin ? 'Yes' : 'No'}</p>
-                </div>
-                <div>
-                  <button
-                    onClick={addAdmin}
-                    disabled={addressRoles.isAdmin || loading || !web3}
-                    className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 disabled:bg-green-300 text-sm mr-2"
-                  >
-                    Add
-                  </button>
-                  <button
-                    onClick={removeAdmin}
-                    disabled={!addressRoles.isAdmin || loading || !web3}
-                    className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 disabled:bg-red-300 text-sm"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Producer Role */}
-            <div className="border rounded-md p-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium">Producer</h3>
-                  <p className="text-sm text-gray-600">Current status: {addressRoles.isProducer ? 'Yes' : 'No'}</p>
-                </div>
-                <div>
-                  <button
-                    onClick={addProducer}
-                    disabled={addressRoles.isProducer || addressRoles.isBlacklisted || loading || !web3}
-                    className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 disabled:bg-green-300 text-sm mr-2"
-                  >
-                    Add
-                  </button>
-                  <button
-                    onClick={removeProducer}
-                    disabled={!addressRoles.isProducer || loading || !web3}
-                    className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 disabled:bg-red-300 text-sm"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Reseller Role */}
-            <div className="border rounded-md p-3">
-              <div className="flex justify-between items-center mb-3">
-                <div>
-                  <h3 className="font-medium">Reseller</h3>
-                  <p className="text-sm text-gray-600">Current status: {addressRoles.isReseller ? 'Yes' : 'No'}</p>
-                </div>
-                <div>
-                  <button
-                    onClick={addReseller}
-                    disabled={addressRoles.isReseller || addressRoles.isBlacklisted || loading || !web3}
-                    className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 disabled:bg-green-300 text-sm mr-2"
-                  >
-                    Add
-                  </button>
-                  <button
-                    onClick={removeReseller}
-                    disabled={!addressRoles.isReseller || loading || !web3}
-                    className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 disabled:bg-red-300 text-sm"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-              
-              {/* Max Quantity Management */}
-              <div className="mt-2 border-t pt-2">
-                <p className="text-sm mb-2">Max Quantity: {addressRoles.maxQuantity}</p>
-                <div className="flex">
-                  <input
-                    type="number"
-                    min="0"
-                    value={newMaxQuantity}
-                    onChange={(e) => setNewMaxQuantity(parseInt(e.target.value) || 0)}
-                    className="w-24 p-1 border border-gray-300 rounded-l-md text-sm"
-                  />
-                  <button
-                    onClick={updateMaxQuantity}
-                    disabled={!addressRoles.isReseller || loading || !web3}
-                    className="bg-blue-600 text-white px-2 py-1 rounded-r-md hover:bg-blue-700 disabled:bg-blue-300 text-sm"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <button
-            onClick={resetForm}
-            className="mt-4 w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
-          >
-            Reset
-          </button>
         </div>
-      )}
-      
-      <div className="mt-6 text-sm text-gray-600">
-        <h3 className="font-medium mb-2">About Role Management</h3>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>Admins can manage all roles and resolve violations</li>
-          <li>Producers can create new milk batches in the supply chain</li>
-          <li>Resellers can receive and transfer milk batches with a maximum quantity limit</li>
-          <li>Blacklisted addresses cannot participate in the supply chain due to violations</li>
-        </ul>
       </div>
     </div>
   );
 };
 
-export default Settings;
+export default MilkSupplyDashboard;
