@@ -1,419 +1,246 @@
-import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
-import Header from '../components/Header';
-import Topbar from '../components/Topbar';
+import React, { useState } from 'react';
+import { FaDownload } from 'react-icons/fa';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 
-// Contract ABI extracted from the smart contract
-const contractABI = [
-  "function isAdmin(address) view returns (bool)",
-  "function isProducer(address) view returns (bool)",
-  "function isReseller(address) view returns (bool)",
-  "function stockBalance(address) view returns (uint256)",
-  "function blacklistedHolders(address) view returns (bool)",
-  "function getBatchesByOwner(address) view returns (uint256[])",
-  "function batches(uint256) view returns (uint256, address, uint256, uint256, address, bool)",
-  "function getActiveViolationsByHolder(address) view returns (uint256[])",
-  "function produce(uint256)",
-  "function transferStock(address, uint256, uint256)",
-  "function maxQuantityPerReseller(address) view returns (uint256)"
-];
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const MilkSupplyDashboard = () => {
-  // State variables
-  const [account, setAccount] = useState('');
-  const [contract, setContract] = useState(null);
-  const [userRoles, setUserRoles] = useState({ isAdmin: false, isProducer: false, isReseller: false });
-  const [stockBalance, setStockBalance] = useState(0);
-  const [maxQuantity, setMaxQuantity] = useState(0);
-  const [batchIds, setBatchIds] = useState([]);
-  const [batchDetails, setBatchDetails] = useState([]);
+const Dashboard = () => {
+  // State variables for forms and data
+  const [stockEntries, setStockEntries] = useState([]);
+  const [stockExits, setStockExits] = useState([]);
+  const [productName, setProductName] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [dateTime, setDateTime] = useState('');
+  const [location, setLocation] = useState('');
   const [alerts, setAlerts] = useState([]);
-  const [isBlacklisted, setIsBlacklisted] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [transactionPending, setTransactionPending] = useState(false);
+  const [threshold, setThreshold] = useState(100); // Example threshold for alerts
+  const [timeFilter, setTimeFilter] = useState('week'); // Dropdown filter state
 
-  // Form states
-  const [produceQuantity, setProduceQuantity] = useState('');
-  const [selectedBatchId, setSelectedBatchId] = useState('');
-  const [transferQuantity, setTransferQuantity] = useState('');
-  const [transferTo, setTransferTo] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-
-  // Contract address from your input
-  const contractAddress = "0x83b8CDBD920642B2C1F8995C1DD190E63E7aC389";
-
-  // Initialize and connect to the contract
-  useEffect(() => {
-    const init = async () => {
-      try {
-        setErrorMessage('');
-        setSuccessMessage('');
-        setLoading(true);
-
-        if (window.ethereum) {
-          await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const userAddress = await signer.getAddress();
-
-          setAccount(userAddress);
-
-          const milkContract = new ethers.Contract(contractAddress, contractABI, signer);
-          setContract(milkContract);
-
-          await loadUserData(milkContract, userAddress);
-
-          window.ethereum.on('accountsChanged', async (accounts) => {
-            setAccount(accounts[0]);
-            await loadUserData(milkContract, accounts[0]);
-          });
-        } else {
-          setErrorMessage("Please install MetaMask to use this dApp");
-        }
-      } catch (err) {
-        console.error("Initialization error:", err);
-        setErrorMessage("Failed to connect: " + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    init();
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeAllListeners('accountsChanged');
-      }
-    };
-  }, [contractAddress]);
-
-  // Load all user data from the contract
-  const loadUserData = async (contractInstance, userAddress) => {
-    try {
-      const adminStatus = await contractInstance.isAdmin(userAddress);
-      const producerStatus = await contractInstance.isProducer(userAddress);
-      const resellerStatus = await contractInstance.isReseller(userAddress);
-
-      setUserRoles({
-        isAdmin: adminStatus,
-        isProducer: producerStatus,
-        isReseller: resellerStatus
-      });
-
-      const balance = await contractInstance.stockBalance(userAddress);
-      setStockBalance(balance.toString());
-
-      const blacklistStatus = await contractInstance.blacklistedHolders(userAddress);
-      setIsBlacklisted(blacklistStatus);
-
-      const batches = await contractInstance.getBatchesByOwner(userAddress);
-      setBatchIds(batches.map(b => b.toString()));
-
-      const details = await Promise.all(
-        batches.map(async (id) => {
-          const batch = await contractInstance.batches(id);
-          return {
-            id: id.toString(),
-            producer: batch[1],
-            quantity: batch[2].toString(),
-            timestamp: new Date(batch[3].toNumber() * 1000).toLocaleString(),
-            currentOwner: batch[4],
-            expired: batch[5]
-          };
-        })
-      );
-      setBatchDetails(details);
-
-      const violations = await contractInstance.getActiveViolationsByHolder(userAddress);
-      setAlerts(violations.map(v => v.toString()));
-
-      if (resellerStatus) {
-        const max = await contractInstance.maxQuantityPerReseller(userAddress);
-        setMaxQuantity(max.toString());
-      }
-    } catch (err) {
-      console.error("Error loading user data:", err);
-      setErrorMessage("Failed to load data: " + err.message);
+  // Handle stock entry submission
+  const handleStockEntry = () => {
+    if (!productName || !quantity || !dateTime || !location) {
+      alert('Please fill in all fields.');
+      return;
     }
+
+    const newEntry = { productName, quantity: parseInt(quantity), dateTime, location };
+    setStockEntries([...stockEntries, newEntry]);
+
+    // Check for alerts
+    if (parseInt(quantity) > threshold) {
+      setAlerts([...alerts, `Stock entry for ${productName} exceeds threshold!`]);
+    }
+
+    // Reset form
+    setProductName('');
+    setQuantity('');
+    setDateTime('');
+    setLocation('');
   };
 
-  // Produce milk (for producers)
-  const handleProduce = async () => {
-    if (!produceQuantity || parseInt(produceQuantity) <= 0) {
-      setErrorMessage("Please enter a valid quantity");
+  // Handle stock exit submission
+  const handleStockExit = () => {
+    if (!productName || !quantity || !dateTime || !location) {
+      alert('Please fill in all fields.');
       return;
     }
 
-    try {
-      setTransactionPending(true);
-      setErrorMessage('');
-      setSuccessMessage('');
+    const newExit = { productName, quantity: parseInt(quantity), dateTime, location };
+    setStockExits([...stockExits, newExit]);
 
-      const tx = await contract.produce(produceQuantity);
-      await tx.wait();
-
-      setSuccessMessage(`Successfully produced ${produceQuantity} units of milk`);
-      setProduceQuantity('');
-
-      await loadUserData(contract, account);
-    } catch (err) {
-      console.error("Production error:", err);
-      setErrorMessage("Transaction failed: " + (err.reason || err.message));
-    } finally {
-      setTransactionPending(false);
-    }
+    // Reset form
+    setProductName('');
+    setQuantity('');
+    setDateTime('');
+    setLocation('');
   };
 
-  // Transfer stock to another address
-  const handleTransfer = async () => {
-    if (!transferTo || !ethers.utils.isAddress(transferTo)) {
-      setErrorMessage("Please enter a valid recipient address");
-      return;
-    }
-
-    if (!selectedBatchId) {
-      setErrorMessage("Please select a batch to transfer");
-      return;
-    }
-
-    if (!transferQuantity || parseInt(transferQuantity) <= 0) {
-      setErrorMessage("Please enter a valid quantity");
-      return;
-    }
-
-    try {
-      setTransactionPending(true);
-      setErrorMessage('');
-      setSuccessMessage('');
-
-      const tx = await contract.transferStock(transferTo, transferQuantity, selectedBatchId);
-      await tx.wait();
-
-      setSuccessMessage(`Successfully transferred ${transferQuantity} units to ${transferTo}`);
-      setTransferTo('');
-      setTransferQuantity('');
-      setSelectedBatchId('');
-
-      await loadUserData(contract, account);
-    } catch (err) {
-      console.error("Transfer error:", err);
-      setErrorMessage("Transaction failed: " + (err.reason || err.message));
-    } finally {
-      setTransactionPending(false);
-    }
+  // Export declarations as PDF (placeholder function)
+  const exportAsPDF = () => {
+    alert('Exporting declarations as PDF...');
   };
 
-  // Helper function to display role
-  const getUserRole = () => {
-    if (userRoles.isAdmin) return "Admin";
-    if (userRoles.isProducer && userRoles.isReseller) return "Producer & Reseller";
-    if (userRoles.isProducer) return "Producer";
-    if (userRoles.isReseller) return "Reseller";
-    return "No assigned role";
+  // Filter data based on the selected time filter
+  const filterDataByTime = (data) => {
+    const now = new Date();
+    return data.filter((item) => {
+      const itemDate = new Date(item.dateTime);
+      if (timeFilter === 'week') {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(now.getDate() - 7);
+        return itemDate >= oneWeekAgo && itemDate <= now;
+      } else if (timeFilter === 'month') {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        return itemDate >= oneMonthAgo && itemDate <= now;
+      } else if (timeFilter === 'trimester') {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(now.getMonth() - 3);
+        return itemDate >= threeMonthsAgo && itemDate <= now;
+      }
+      return true;
+    });
+  };
+
+  // Prepare filtered data for the chart
+  const filteredStockEntries = filterDataByTime(stockEntries);
+  const filteredStockExits = filterDataByTime(stockExits);
+
+  const filteredChartData = {
+    labels: filteredStockEntries.map((entry) => new Date(entry.dateTime).toLocaleDateString()), // Dates from filtered stock entries
+    datasets: [
+      {
+        label: 'Stock Entries',
+        data: filteredStockEntries.map((entry) => entry.quantity), // Quantities from filtered stock entries
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension: 0.4,
+      },
+      {
+        label: 'Stock Exits',
+        data: filteredStockExits.map((exit) => exit.quantity), // Quantities from filtered stock exits
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Activity Over Time',
+      },
+    },
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <Topbar account={account} role={getUserRole()} />
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          {loading ? (
-            <div className="text-center py-10">
-              <p className="text-gray-600">Loading dashboard data...</p>
+    <div className="flex min-h-screen bg-blue-900">
+      <div className="flex-1 flex flex-col items-center justify-center bg-blue-300 p-6">
+        <div className="max-w-7xl w-full mx-auto">
+          {/* Page Title */}
+          <h1 className="text-2xl font-bold mb-6 font-inter text-gray-800 text-center">
+            Welcome to your Dashboard!
+          </h1>
+
+          {/* Grid Layout for Boxes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Declare Stock Entry */}
+            <div className="bg-white shadow rounded-lg p-8">
+              <h2 className="text-xl font-semibold mb-4">📥 Declare Stock Entry</h2>
+              <form className="grid grid-cols-1 gap-4">
+                <input
+                  type="text"
+                  placeholder="Product Name"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <input
+                  type="datetime-local"
+                  value={dateTime}
+                  onChange={(e) => setDateTime(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <input
+                  type="text"
+                  placeholder="Location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <button
+                  type="button"
+                  onClick={handleStockEntry}
+                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+                >
+                  Submit Entry
+                </button>
+              </form>
             </div>
-          ) : (
-            <>
-              {errorMessage && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                  {errorMessage}
-                </div>
-              )}
 
-              {successMessage && (
-                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                  {successMessage}
-                </div>
-              )}
+            {/* Declare Stock Exit */}
+            <div className="bg-white shadow rounded-lg p-8">
+              <h2 className="text-xl font-semibold mb-4">📤 Declare Stock Exit</h2>
+              <form className="grid grid-cols-1 gap-4">
+                <input
+                  type="text"
+                  placeholder="Product Name"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <input
+                  type="number"
+                  placeholder="Quantity"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <input
+                  type="datetime-local"
+                  value={dateTime}
+                  onChange={(e) => setDateTime(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <input
+                  type="text"
+                  placeholder="Location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                />
+                <button
+                  type="button"
+                  onClick={handleStockExit}
+                  className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"
+                >
+                  Submit Exit
+                </button>
+              </form>
+            </div>
 
-              {/* User Info Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
-                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Connected Address</h3>
-                  <p className="text-gray-700 truncate">{account}</p>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
-                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Role</h3>
-                  <p className="text-gray-700">{getUserRole()}</p>
-                  {isBlacklisted && <p className="text-red-600 font-bold mt-1">BLACKLISTED</p>}
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
-                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Total Stock</h3>
-                  <p className="text-gray-700">{stockBalance} units</p>
-                  {userRoles.isReseller && (
-                    <p className="text-xs text-gray-500 mt-1">Max allowed: {maxQuantity} units</p>
-                  )}
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
-                  <h3 className="text-sm font-semibold text-blue-800 mb-1">Alerts</h3>
-                  <p className="text-gray-700">{alerts.length} active alerts</p>
-                </div>
+            {/* Activity Chart */}
+            <div className="bg-white shadow rounded-lg p-8 col-span-2">
+              <h2 className="text-xl font-semibold mb-4">📈 Activity Over Time</h2>
+              <div className="flex justify-between items-center mb-4">
+                <label htmlFor="timeFilter" className="text-gray-700">
+                  Filter:
+                </label>
+                <select
+                  id="timeFilter"
+                  value={timeFilter}
+                  onChange={(e) => setTimeFilter(e.target.value)}
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
+                >
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="trimester">This Trimester</option>
+                </select>
               </div>
-
-              {/* Action Panels */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                {/* Producer Panel */}
-                {userRoles.isProducer && (
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <h2 className="text-lg font-semibold text-blue-800 mb-4">Produce New Batch</h2>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-2">Quantity</label>
-                      <input
-                        type="number"
-                        value={produceQuantity}
-                        onChange={(e) => setProduceQuantity(e.target.value)}
-                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
-                        placeholder="Enter quantity"
-                        disabled={transactionPending || isBlacklisted}
-                      />
-                    </div>
-                    <button
-                      onClick={handleProduce}
-                      disabled={transactionPending || isBlacklisted}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded disabled:opacity-50"
-                    >
-                      {transactionPending ? "Processing..." : "Produce Milk"}
-                    </button>
-                    {isBlacklisted && (
-                      <p className="text-red-600 text-sm mt-2">
-                        You cannot produce while blacklisted
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Reseller Panel */}
-                {(userRoles.isReseller || userRoles.isProducer) && (
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <h2 className="text-lg font-semibold text-blue-800 mb-4">Transfer Stock</h2>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-2">Select Batch</label>
-                      <select
-                        value={selectedBatchId}
-                        onChange={(e) => setSelectedBatchId(e.target.value)}
-                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
-                        disabled={transactionPending || isBlacklisted}
-                      >
-                        <option value="">Select a batch</option>
-                        {batchDetails.map((batch) => (
-                          <option key={batch.id} value={batch.id}>
-                            Batch #{batch.id} - {batch.quantity} units
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-2">Transfer To (Address)</label>
-                      <input
-                        type="text"
-                        value={transferTo}
-                        onChange={(e) => setTransferTo(e.target.value)}
-                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
-                        placeholder="0x..."
-                        disabled={transactionPending || isBlacklisted}
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 mb-2">Quantity</label>
-                      <input
-                        type="number"
-                        value={transferQuantity}
-                        onChange={(e) => setTransferQuantity(e.target.value)}
-                        className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
-                        placeholder="Enter quantity"
-                        disabled={transactionPending || isBlacklisted}
-                      />
-                    </div>
-                    <button
-                      onClick={handleTransfer}
-                      disabled={transactionPending || isBlacklisted}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded disabled:opacity-50"
-                    >
-                      {transactionPending ? "Processing..." : "Transfer Stock"}
-                    </button>
-                    {isBlacklisted && (
-                      <p className="text-red-600 text-sm mt-2">
-                        You cannot transfer while blacklisted
-                      </p>
-                    )}
-                  </div>
-                )}
+              <div className="h-96 w-full">
+                <Line data={filteredChartData} options={chartOptions} />
               </div>
-
-              {/* Batches Table */}
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-blue-800 mb-4">My Batches</h2>
-                {batchDetails.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white border rounded-lg overflow-hidden">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="py-3 px-4 text-left">ID</th>
-                          <th className="py-3 px-4 text-left">Producer</th>
-                          <th className="py-3 px-4 text-left">Quantity</th>
-                          <th className="py-3 px-4 text-left">Created</th>
-                          <th className="py-3 px-4 text-left">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {batchDetails.map((batch) => (
-                          <tr key={batch.id} className="border-t hover:bg-gray-50">
-                            <td className="py-3 px-4">{batch.id}</td>
-                            <td className="py-3 px-4 truncate max-w-xs">{batch.producer}</td>
-                            <td className="py-3 px-4">{batch.quantity} units</td>
-                            <td className="py-3 px-4">{batch.timestamp}</td>
-                            <td className="py-3 px-4">
-                              {batch.expired ? (
-                                <span className="text-red-600">Expired</span>
-                              ) : (
-                                <span className="text-green-600">Active</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 italic">You don't have any batches yet.</p>
-                )}
-              </div>
-
-              {/* Alerts Section */}
-              {alerts.length > 0 && (
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-blue-800 mb-4">Alerts & Violations</h2>
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                    <p className="text-red-700 font-medium mb-2">
-                      You have {alerts.length} active storage violation{alerts.length !== 1 && 's'}
-                    </p>
-                    <p className="text-gray-700 text-sm">
-                      Contact an administrator to resolve these violations. 
-                      Accumulating {isBlacklisted ? 'more ' : ''} violations may result in blacklisting.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-//un commentaire pour tester le commit
-export default MilkSupplyDashboard;
+
+export default Dashboard;
