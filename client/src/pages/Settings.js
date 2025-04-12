@@ -19,7 +19,7 @@ const contractABI = [
 ];
 
 const Settings = () => {
-  const [account, setAccount] = useState(""); // Connected account from MetaMask
+  const [account, setAccount] = useState(""); // Connected account from Ganache
   const [contract, setContract] = useState(null);
   const [address, setAddress] = useState("");
   const [addressRoles, setAddressRoles] = useState({
@@ -35,24 +35,21 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
 
   const contractAddress = "0x8158765c022d23D0E6eF53863f45218bE7050a82"; // Contract address
+  const ganacheRPC = "http://127.0.0.1:7545"; // Ganache RPC URL
+  const privateKey = "0xd88511025140e10e257cb5d709ebf3ddd346f3bd48f8bc5ec5da0631ecc6a39e"; // Replace with a private key from Ganache
 
-  // Initialize the contract and connect to MetaMask
+  // Initialize the contract and connect to Ganache
   useEffect(() => {
     const init = async () => {
       try {
-        if (window.ethereum) {
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = provider.getSigner();
-          const userAddress = await signer.getAddress();
+        // Connect to Ganache
+        const provider = new ethers.providers.JsonRpcProvider(ganacheRPC);
+        const wallet = new ethers.Wallet(privateKey, provider);
 
-          setAccount(userAddress); // Set the connected account address
+        setAccount(wallet.address); // Set the connected account address
 
-          const milkContract = new ethers.Contract(contractAddress, contractABI, signer);
-          setContract(milkContract);
-        } else {
-          setActionStatus({ type: "error", message: "Please install MetaMask to use this dApp" });
-        }
+        const milkContract = new ethers.Contract(contractAddress, contractABI, wallet);
+        setContract(milkContract);
       } catch (err) {
         console.error("Initialization error:", err);
         setActionStatus({ type: "error", message: `Failed to connect: ${err.message}` });
@@ -60,7 +57,7 @@ const Settings = () => {
     };
 
     init();
-  }, [contractAddress]);
+  }, [contractAddress, ganacheRPC, privateKey]);
 
   // Check roles for a specific address
   const checkRoles = async () => {
@@ -123,12 +120,12 @@ const Settings = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-blue-900"> {/* Changed bg-gray-50 to bg-blue-900 */}
+    <div className="flex min-h-screen bg-blue-900">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-blue-300"> {/* Changed bg-blue-900 to bg-blue-300 */}
+      <div className="flex-1 flex flex-col items-center justify-center bg-blue-300">
         {/* Top Section */}
         <div className="flex justify-end items-center px-6 py-4 w-full">
           <div className="text-sm text-gray-600 bg-white rounded-lg px-4 py-2 shadow">
