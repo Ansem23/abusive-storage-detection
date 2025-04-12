@@ -15,12 +15,17 @@ contract MilkSupplyChain is Ownable {
     }
     
     struct StorageViolation {
+        ViolationType violationType;
         address holder;
         uint256 batchId;
         uint256 detectionTime;
         bool resolved;
     }
-    
+    enum ViolationType {
+    None,
+    ExcessiveStorage,
+    QuantityOverflow
+}
     uint256 public maxStorageDuration = 30 days;
     uint256 public nextBatchId;
     uint256 public nextViolationId;
@@ -168,6 +173,8 @@ contract MilkSupplyChain is Ownable {
         require(!blacklistedHolders[to], "Recipient is blacklisted for abusive storage");
         require(batches[batchId].currentOwner == msg.sender, "You don't own this batch");
         require(batches[batchId].quantity >= amount, "Insufficient quantity in batch");
+        //check for quantity
+        checkForQuantity(to,amount,batchId);
         
         // Check for abusive storage
         checkForAbusiveStorage(batchId);
@@ -210,6 +217,7 @@ contract MilkSupplyChain is Ownable {
             // Report violation
             uint256 violationId = nextViolationId++;
             violations[violationId] = StorageViolation({
+                violationType: ViolationType.ExcessiveStorage,
                 holder: batch.currentOwner,
                 batchId: batchId,
                 detectionTime: block.timestamp,
@@ -231,7 +239,29 @@ contract MilkSupplyChain is Ownable {
         
         return false;
     }
-    
+    function checkForQuantity(address to,uint256 amount,uint256 batchId) public{
+        Batch storage batch = batches[batchId];
+        if (stockBalance[to]+amount>maxQuantityPerReseller[to]){
+            uint256 violationId = nextViolationId++;
+            violations[violationId] = StorageViolation({
+                violationType: ViolationType.QuantityOverflow,
+                holder: batch.currentOwner,
+                batchId: batchId,
+                detectionTime: block.timestamp,
+                resolved: false
+            });
+            
+            violationsByHolder[batch.currentOwner].push(violationId);
+            
+            emit AbusiveStorageDetected(violationId, batch.currentOwner, batchId, block.timestamp);
+            
+            // holder  blacklisted??
+            if (violationsByHolder[batch.currentOwner].length >= violationThreshold) {
+                blacklistedHolders[batch.currentOwner] = true;
+                emit HolderBlacklisted(batch.currentOwner, violationsByHolder[batch.currentOwner].length);
+                revert("Recipient exceeds maximum allowed stock");
+        }
+        }}
     function resolveViolation(uint256 violationId) external onlyAdmin {
         require(violationId < nextViolationId, "Violation does not exist");
         require(!violations[violationId].resolved, "Violation already resolved");
@@ -346,4 +376,29 @@ contract MilkSupplyChain is Ownable {
         
         return activeViolations > 0;
     }
+    function blacklistManually(address holder) external onlyAdmin {
+    require(!blacklistedHolders[holder], "Already blacklisted");
+    blacklistedHolders[holder] = true;
+    emit HolderBlacklisted(holder, violationsByHolder[holder].length);
+}
+function triggerFakeViolation(address holder, uint256 batchId, ViolationType vType) external onlyAdmin {
+    uint256 violationId = nextViolationId++;
+    violations[violationId] = StorageViolation({
+        violationType: vType,
+        holder: holder,
+        batchId: batchId,
+        detectionTime: block.timestamp,
+        resolved: false
+    });
+
+    violationsByHolder[holder].push(violationId);
+
+    emit AbusiveStorageDetected(violationId, holder, batchId, block.timestamp);
+
+    if (violationsByHolder[holder].length >= violationThreshold && !blacklistedHolders[holder]) {
+        blacklistedHolders[holder] = true;
+        emit HolderBlacklisted(holder, violationsByHolder[holder].length);
+    }
+}
+
 }
