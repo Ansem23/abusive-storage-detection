@@ -122,16 +122,18 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-blue-900"> {/* Changed bg-gray-50 to bg-blue-900 */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-blue-300 p-6"> {/* Changed bg-gray-50 to bg-blue-300 */}
-        <div className="max-w-7xl mx-auto">
+    <div className="flex min-h-screen bg-blue-900">
+      <div className="flex-1 flex flex-col items-center justify-center bg-blue-300 p-6">
+        <div className="max-w-7xl w-full mx-auto">
           {/* Page Title */}
-          <h1 className="text-2xl font-bold mb-6 font-inter text-gray-800 text-center">Welcome to your Dashboard!</h1>
+          <h1 className="text-2xl font-bold mb-6 font-inter text-gray-800 text-center">
+            Welcome to your Dashboard!
+          </h1>
 
           {/* Grid Layout for Boxes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Declare Stock Entry */}
-            <div className="bg-white shadow rounded-lg p-6">
+            <div className="bg-white shadow rounded-lg p-8">
               <h2 className="text-xl font-semibold mb-4">📥 Declare Stock Entry</h2>
               <form className="grid grid-cols-1 gap-4">
                 <input
@@ -139,27 +141,27 @@ const Dashboard = () => {
                   placeholder="Product Name"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <input
                   type="number"
                   placeholder="Quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <input
                   type="datetime-local"
                   value={dateTime}
                   onChange={(e) => setDateTime(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <input
                   type="text"
                   placeholder="Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <button
                   type="button"
@@ -172,7 +174,7 @@ const Dashboard = () => {
             </div>
 
             {/* Declare Stock Exit */}
-            <div className="bg-white shadow rounded-lg p-6">
+            <div className="bg-white shadow rounded-lg p-8">
               <h2 className="text-xl font-semibold mb-4">📤 Declare Stock Exit</h2>
               <form className="grid grid-cols-1 gap-4">
                 <input
@@ -180,27 +182,27 @@ const Dashboard = () => {
                   placeholder="Product Name"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <input
                   type="number"
                   placeholder="Quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <input
                   type="datetime-local"
                   value={dateTime}
                   onChange={(e) => setDateTime(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <input
                   type="text"
                   placeholder="Location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 />
                 <button
                   type="button"
@@ -213,7 +215,7 @@ const Dashboard = () => {
             </div>
 
             {/* Activity Chart */}
-            <div className="bg-white shadow rounded-lg p-6 col-span-1 md:col-span-2">
+            <div className="bg-white shadow rounded-lg p-8 col-span-2">
               <h2 className="text-xl font-semibold mb-4">📈 Activity Over Time</h2>
               <div className="flex justify-between items-center mb-4">
                 <label htmlFor="timeFilter" className="text-gray-700">
@@ -223,43 +225,16 @@ const Dashboard = () => {
                   id="timeFilter"
                   value={timeFilter}
                   onChange={(e) => setTimeFilter(e.target.value)}
-                  className="p-2 border rounded focus:ring focus:ring-blue-300"
+                  className="p-3 border rounded focus:ring focus:ring-blue-300"
                 >
                   <option value="week">This Week</option>
                   <option value="month">This Month</option>
                   <option value="trimester">This Trimester</option>
                 </select>
               </div>
-              <div className="h-64 w-full">
+              <div className="h-96 w-full">
                 <Line data={filteredChartData} options={chartOptions} />
               </div>
-            </div>
-
-            {/* Notifications/Alerts */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">🔔 Notifications/Alerts</h2>
-              {alerts.length > 0 ? (
-                <ul className="list-disc pl-6">
-                  {alerts.map((alert, index) => (
-                    <li key={index} className="text-red-600">
-                      {alert}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500">No alerts at the moment.</p>
-              )}
-            </div>
-
-            {/* My Declarations */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">📁 My Declarations</h2>
-              <button
-                onClick={exportAsPDF}
-                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center"
-              >
-                <FaDownload className="mr-2" /> Export as PDF
-              </button>
             </div>
           </div>
         </div>
