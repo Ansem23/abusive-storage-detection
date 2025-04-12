@@ -25,7 +25,8 @@ const Sidebar = () => {
   return (
     <aside
       className="
-        w-64 h-screen 
+        w-64 
+        min-h-screen 
         bg-gradient-to-b from-blue-900 via-blue-800 to-black 
         text-white shadow-lg 
         flex flex-col
@@ -49,8 +50,7 @@ const Sidebar = () => {
             to={item.path}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-md 
-              hover:bg-blue-700 
-              transition-all 
+              hover:bg-blue-700 transition-all 
               ${
                 location.pathname === item.path
                   ? "bg-blue-700 font-semibold"
@@ -64,7 +64,7 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer or version */}
+      {/* Footer / Version */}
       <div className="p-4 text-xs text-center text-gray-400">
         © 2025 MilkChain
       </div>

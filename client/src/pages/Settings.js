@@ -34,9 +34,9 @@ const Settings = () => {
   const [newMaxQuantity, setNewMaxQuantity] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const contractAddress = "0x8158765c022d23D0E6eF53863f45218bE7050a82"; // Contract address
+  const contractAddress = "0x5304790909ba6a19f33C6BC2407a106c77E23BEf"; // Contract address
   const ganacheRPC = "http://127.0.0.1:7545"; // Ganache RPC URL
-  const privateKey = "0xd88511025140e10e257cb5d709ebf3ddd346f3bd48f8bc5ec5da0631ecc6a39e"; // Replace with a private key from Ganache
+  const privateKey = "0x96e74f63173302c1dd6c9ee7da33e03c91da7d763b5beb0907b87ecb3ba7a7479e"; // Replace with a private key from Ganache
 
   // Initialize the contract and connect to Ganache
   useEffect(() => {
