@@ -6,33 +6,37 @@ const Stocks = () => {
   const [recipient, setRecipient] = useState("");
 
   const handleTransfer = () => {
-    // Logique de transfert (sera connectée au smart contract plus tard)
     alert(`✅ Transfert de ${quantity}L vers ${recipient}`);
     setQuantity("");
     setRecipient("");
   };
 
   return (
-    <div className="p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-100">
       <h1 className="text-3xl font-bold mb-6">📦 Transfert de Stock</h1>
 
-      <div className="bg-white shadow-md rounded-xl p-6 max-w-lg">
+      {/* 
+        Agrandissement de la carte : 
+        - p-10 pour un padding interne plus grand
+        - max-w-4xl au lieu de max-w-2xl (carte plus large)
+      */}
+      <div className="bg-white shadow-md rounded-xl p-10 max-w-4xl w-full">
         <div className="mb-4">
-          <label className="block font-semibold mb-2">quantity (L)</label>
+          <label className="block font-semibold mb-2">Quantity (L)</label>
           <input
             type="number"
-            className="w-full border rounded-lg px-4 py-2"
+            className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
             placeholder="ex: 150"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block font-semibold mb-2">destination's address</label>
+        <div className="mb-6">
+          <label className="block font-semibold mb-2">Destination's address</label>
           <input
             type="text"
-            className="w-full border rounded-lg px-4 py-2"
+            className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
             placeholder="ex: 0x1234..."
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}

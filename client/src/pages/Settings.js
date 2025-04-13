@@ -1,8 +1,7 @@
+// client/src/pages/Settings.js
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import Sidebar from "../components/Sidebar"; // Import the Sidebar component
 
-// Contract ABI for role management
 const contractABI = [
   "function isAdmin(address) view returns (bool)",
   "function isProducer(address) view returns (bool)",
@@ -15,11 +14,11 @@ const contractABI = [
   "function setReseller(address, uint256)",
   "function removeReseller(address)",
   "function changeMaxQuantityReseller(address, uint256)",
-  "function removeFromBlacklist(address)"
+  "function removeFromBlacklist(address)",
 ];
 
 const Settings = () => {
-  const [account, setAccount] = useState(""); // Connected account from Ganache
+  const [account, setAccount] = useState("");
   const [contract, setContract] = useState(null);
   const [address, setAddress] = useState("");
   const [addressRoles, setAddressRoles] = useState({
@@ -27,26 +26,26 @@ const Settings = () => {
     isProducer: false,
     isReseller: false,
     isBlacklisted: false,
-    maxQuantity: 0
+    maxQuantity: 0,
   });
   const [actionStatus, setActionStatus] = useState({ type: "", message: "" });
-  const [roleMessage, setRoleMessage] = useState(""); // Role message beside the button
+  const [roleMessage, setRoleMessage] = useState("");
   const [newMaxQuantity, setNewMaxQuantity] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const contractAddress = "0x5304790909ba6a19f33C6BC2407a106c77E23BEf"; // Contract address
-  const ganacheRPC = "http://127.0.0.1:7545"; // Ganache RPC URL
-  const privateKey = "0x96e74f63173302c1dd6c9ee7da33e03c91da7d763b5beb0907b87ecb3ba7a7479e"; // Replace with a private key from Ganache
+  // Votre adresse de contrat / RPC / clé privée
+  const contractAddress = "0xba3a425E2229a98f152CD3357269f7d42d4a6683";
+  const ganacheRPC = "http://127.0.0.1:7545";
+  const privateKey =
+    "0x96e74f63173302c1dd6c9ee7da33e03c91da7d763b5beb0907b87ecb3ba7a7479e";
 
-  // Initialize the contract and connect to Ganache
+  // Initialisation du contrat et connexion
   useEffect(() => {
     const init = async () => {
       try {
-        // Connect to Ganache
         const provider = new ethers.providers.JsonRpcProvider(ganacheRPC);
         const wallet = new ethers.Wallet(privateKey, provider);
-
-        setAccount(wallet.address); // Set the connected account address
+        setAccount(wallet.address);
 
         const milkContract = new ethers.Contract(contractAddress, contractABI, wallet);
         setContract(milkContract);
@@ -59,11 +58,11 @@ const Settings = () => {
     init();
   }, [contractAddress, ganacheRPC, privateKey]);
 
-  // Check roles for a specific address
+  // Vérification des rôles
   const checkRoles = async () => {
     if (!ethers.utils.isAddress(address)) {
       setActionStatus({ type: "error", message: "Invalid address" });
-      setRoleMessage(""); // Clear role message
+      setRoleMessage("");
       return;
     }
 
@@ -79,30 +78,32 @@ const Settings = () => {
         isProducer,
         isReseller,
         isBlacklisted,
-        maxQuantity: 0 // Add logic for maxQuantity if needed
+        maxQuantity: 0,
       });
 
-      // Determine the role based on the flags
       let role = "No specific role";
       if (isAdmin) role = "Admin";
       else if (isProducer) role = "Producer";
       else if (isReseller) role = "Reseller";
       else if (isBlacklisted) role = "Blacklisted";
 
-      setRoleMessage(role); // Set the role message beside the button
+      setRoleMessage(role);
     } catch (err) {
       console.error("Error checking roles:", err);
       setActionStatus({ type: "error", message: `Failed to check roles: ${err.message}` });
-      setRoleMessage(""); // Clear role message on error
+      setRoleMessage("");
     } finally {
       setLoading(false);
     }
   };
 
-  // Generic function to handle role management actions
+  // Fonction générique pour les actions
   const handleRoleAction = async (action, params = []) => {
     if (!contract || !address) {
-      setActionStatus({ type: "error", message: "Contract not initialized or address is empty" });
+      setActionStatus({
+        type: "error",
+        message: "Contract not initialized or address is empty",
+      });
       return;
     }
 
@@ -113,117 +114,138 @@ const Settings = () => {
       setActionStatus({ type: "success", message: `${action} executed successfully` });
     } catch (err) {
       console.error(`Error executing ${action}:`, err);
-      setActionStatus({ type: "error", message: `Failed to execute ${action}: ${err.message}` });
+      setActionStatus({
+        type: "error",
+        message: `Failed to execute ${action}: ${err.message}`,
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-blue-900">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-blue-300">
-        {/* Top Section */}
-        <div className="flex justify-end items-center px-6 py-4 w-full">
-          <div className="text-sm text-gray-600 bg-white rounded-lg px-4 py-2 shadow">
-            <span className="font-semibold">Connected Account:</span>{" "}
-            <span className="text-blue-600 font-semibold">{account}</span>
-          </div>
+    <div className="flex flex-col min-h-screen bg-blue-300">
+      {/* Barre du haut */}
+      <div className="flex justify-end items-center px-6 py-4 w-full">
+        <div className="text-sm text-gray-600 bg-white rounded-lg px-4 py-2 shadow">
+          <span className="font-semibold">Connected Account:</span>{" "}
+          <span className="text-blue-600 font-semibold">{account}</span>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="p-6 w-full max-w-4xl bg-white rounded-xl shadow-md">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Admin Panel</h1>
+      {/* Contenu principal */}
+      <div className="p-6 w-full max-w-5xl bg-white rounded-xl shadow-md mx-auto">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          Admin Panel
+        </h1>
 
-          {/* Check Roles Section */}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Check Roles</h2>
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2">Address</label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
-                placeholder="Enter address (0x...)"
-              />
+        {/* Organisation en 2 colonnes */}
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Colonne gauche : Check Roles */}
+          <div className="bg-gray-50 p-6 rounded shadow flex flex-col justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+                Check Roles
+              </h2>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">
+                  Enter address (0x...)
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+                  placeholder="Enter address (0x...)"
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div>
               <button
                 onClick={checkRoles}
-                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded"
+                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105 w-full"
               >
                 {loading ? "Checking..." : "Check Roles"}
               </button>
               {roleMessage && (
-                <span className="text-gray-700 font-semibold">{`Role: ${roleMessage}`}</span>
+                <span className="block text-gray-700 font-semibold mt-3 text-center">
+                  Role: {roleMessage}
+                </span>
               )}
             </div>
           </div>
 
-          {/* Role Management Section */}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Manage Roles</h2>
-            <div className="flex justify-center space-x-4 mb-4">
+          {/* Colonne droite : Manage Roles */}
+          <div className="bg-gray-50 p-6 rounded shadow">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+              Manage Roles
+            </h2>
+            {/* Grid 2 colonnes pour aligner les 6 boutons */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Admin */}
               <button
                 onClick={() => handleRoleAction("addAdmin", [address])}
-                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded"
+                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105"
               >
                 Add Admin
               </button>
               <button
                 onClick={() => handleRoleAction("removeAdmin", [address])}
-                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded"
+                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105"
               >
                 Remove Admin
               </button>
-            </div>
-            <div className="flex justify-center space-x-4 mb-4">
+
+              {/* Producer */}
               <button
                 onClick={() => handleRoleAction("setProducer", [address])}
-                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded"
+                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105"
               >
                 Add Producer
               </button>
               <button
                 onClick={() => handleRoleAction("removeProducer", [address])}
-                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded"
+                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105"
               >
                 Remove Producer
               </button>
-            </div>
-            <div className="flex justify-center space-x-4 mb-4">
+
+              {/* Reseller */}
               <button
                 onClick={() => handleRoleAction("setReseller", [address, newMaxQuantity])}
-                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded"
+                className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105"
               >
                 Add Reseller
               </button>
               <button
                 onClick={() => handleRoleAction("removeReseller", [address])}
-                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded"
+                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105"
               >
                 Remove Reseller
               </button>
             </div>
           </div>
-
-          {/* Action Status */}
-          {actionStatus.message && (
-            <div
-              className={`p-4 rounded ${
-                actionStatus.type === "success"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              {actionStatus.message}
-            </div>
-          )}
         </div>
+
+        {/* Affichage des messages d’état (succès ou erreur) */}
+        {actionStatus.message && (
+          <div
+            className={`mt-6 p-4 rounded ${
+              actionStatus.type === "success"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {actionStatus.message}
+          </div>
+        )}
       </div>
     </div>
   );
