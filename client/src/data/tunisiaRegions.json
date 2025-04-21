@@ -1,0 +1,44 @@
+{
+  "regions": [
+    {
+      "name": "Tunis",
+      "coordinates": [36.8665, 10.1647],
+      "vendors": 25
+    },
+    {
+      "name": "Sfax",
+      "coordinates": [34.7398, 10.7600],
+      "vendors": 18
+    },
+    {
+      "name": "Sousse",
+      "coordinates": [35.8245, 10.6346],
+      "vendors": 15
+    },
+    {
+      "name": "Kairouan",
+      "coordinates": [35.6780, 10.0963],
+      "vendors": 12
+    },
+    {
+      "name": "Bizerte",
+      "coordinates": [37.2746, 9.8627],
+      "vendors": 10
+    },
+    {
+      "name": "Gabès",
+      "coordinates": [33.8881, 10.0975],
+      "vendors": 8
+    },
+    {
+      "name": "Ariana",
+      "coordinates": [36.8625, 10.1956],
+      "vendors": 7
+    },
+    {
+      "name": "Gafsa",
+      "coordinates": [34.4311, 8.7840],
+      "vendors": 6
+    }
+  ]
+}

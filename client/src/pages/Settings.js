@@ -34,10 +34,10 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
 
   // Votre adresse de contrat / RPC / clé privée
-  const contractAddress = "0xba3a425E2229a98f152CD3357269f7d42d4a6683";
+  const contractAddress = "0x39369A6828411BEA916876f36e0f74901e686218";
   const ganacheRPC = "http://127.0.0.1:7545";
   const privateKey =
-    "0x96e74f63173302c1dd6c9ee7da33e03c91da7d763b5beb0907b87ecb3ba7a7479e";
+    "0xd88511025140e10e257cb5d709ebf3ddd346f3bd48f8bc5ec5da0631ecc6a39e";
 
   // Initialisation du contrat et connexion
   useEffect(() => {

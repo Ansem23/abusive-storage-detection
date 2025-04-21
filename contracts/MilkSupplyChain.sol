@@ -77,9 +77,9 @@ contract MilkSupplyChain is Ownable {
     modifier notBlacklisted() {
         require(!blacklistedHolders[msg.sender], "Account is blacklisted for abusive storage");
         _;
+
     }
-    
-        constructor() {
+    constructor() {
     _transferOwnership(msg.sender);
     isAdmin[msg.sender] = true;
     emit AdminAdded(msg.sender);
@@ -345,5 +345,12 @@ contract MilkSupplyChain is Ownable {
         }
         
         return activeViolations > 0;
+    }
+
+    function getRole(address account) external view returns (string memory) {
+        if (isAdmin[account]) return "admin";
+        if (isProducer[account]) return "producer";
+        if (isReseller[account]) return "reseller";
+        return "unknown";
     }
 }
