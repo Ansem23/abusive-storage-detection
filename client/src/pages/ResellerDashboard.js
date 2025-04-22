@@ -23,8 +23,8 @@ ChartJS.register(
   Legend
 );
 
-const ProducerResellerDashboard = () => {
-  const [userName, setUserName] = useState("Délice"); // Replace with dynamic user data
+const ResellerDashboard = () => {
+  const [userName, setUserName] = useState("reseller X"); // Replace with dynamic user data
   const [currentStock, setCurrentStock] = useState(1200); // Example stock level
   const [declaredEntries, setDeclaredEntries] = useState(300); // Example entries
   const [declaredExits, setDeclaredExits] = useState(200); // Example exits
@@ -171,4 +171,4 @@ const ProducerResellerDashboard = () => {
   );
 };
 
-export default ProducerResellerDashboard;
+export default ResellerDashboard;

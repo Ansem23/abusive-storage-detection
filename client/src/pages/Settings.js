@@ -212,12 +212,13 @@ const Settings = () => {
 
               {/* Reseller RANIM ZID INPUT BCH TATTIH MAXQUANTITY*/}
               <button
-                onClick={() => handleRoleAction("setReseller", [address, newMaxQuantity])}
+                onClick={() => handleRoleAction("setReseller", [address, 50])}
                 className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded 
                   transition-transform hover:scale-105"
               > 
                 Add Reseller
               </button>
+
               <button
                 onClick={() => handleRoleAction("removeReseller", [address])}
                 className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded 
@@ -225,6 +226,15 @@ const Settings = () => {
               >
                 Remove Reseller
               </button>
+              <p className="col-span-2">Select Max Quantity:</p>
+              <input
+                    type="number"
+                    min="0"
+                    value={newMaxQuantity}
+                    onChange={(e) => setNewMaxQuantity(parseInt(e.target.value) || 0)}
+                    className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded 
+                  transition-transform hover:scale-105 w-full col-span-2"
+                  />
             </div>
           </div>
         </div>

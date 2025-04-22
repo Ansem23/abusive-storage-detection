@@ -5,11 +5,18 @@ import { useAppContext } from "../context/AppContext";
 const LandingPage = () => {
   const navigate = useNavigate();
   const { connectWallet } = useAppContext();
-
+  const handleClick = async () => {
+    const { success, role } = await connectWallet();
+    if (success) {
+      navigate("/dashboard"); // or whatever route you want
+    } else {
+      alert("Failed to connect wallet.");
+    }
+  };
   return (
     <div 
       className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-black"
-      onClick={() => connectWallet()}
+      onClick={() => handleClick()}
     >
       <div className="text-center space-y-6 cursor-pointer hover:scale-105 transition-transform duration-300">
         <img

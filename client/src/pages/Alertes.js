@@ -1,88 +1,108 @@
-import React, { useEffect, useState } from "react";
-import { AlertCircle } from "lucide-react";
-import Web3 from "web3";
-import MilkSupplyChain from "../contracts/MilkSupplyChain.json";
+import React, { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
+import MilkSupplyChain from '../contracts/MilkSupplyChain.json';
 
-const Alertes = () => {
-  const [web3, setWeb3] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [overThreshold, setOverThreshold] = useState([]);
-  const [loading, setLoading] = useState(true);
+const contractAddress = '0x4EebE79FbD9d69c964A035857dF0f422a9C5a385';
 
-  const THRESHOLD = 1000; // seuil défini pour abus de stockage
+const AlertsPage = () => {
+  const [account, setAccount] = useState('');
+  const [violations, setViolations] = useState([]);
+  const [expiringBatches, setExpiringBatches] = useState([]);
 
   useEffect(() => {
-    const initBlockchain = async () => {
-      try {
-        const web3Instance = new Web3("http://127.0.0.1:7545");
-        setWeb3(web3Instance);
-
-        const networkId = await web3Instance.eth.net.getId();
-        const deployedNetwork = MilkSupplyChain.networks[networkId];
-
-        if (deployedNetwork) {
-          const instance = new web3Instance.eth.Contract(
-            MilkSupplyChain.abi,
-            deployedNetwork.address
-          );
-          setContract(instance);
-
-          const accounts = await web3Instance.eth.getAccounts();
-          const allProducers = await Promise.all(
-            accounts.map(async (addr) => {
-              try {
-                const isProducer = await instance.methods.isProducer(addr).call();
-                const balance = await instance.methods.stockBalance(addr).call();
-                return isProducer && balance > THRESHOLD
-                  ? { address: addr, balance }
-                  : null;
-              } catch {
-                return null;
-              }
-            })
-          );
-
-          setOverThreshold(allProducers.filter((p) => p !== null));
-        } else {
-          alert("Contrat non déployé sur ce réseau");
-        }
-      } catch (err) {
-        console.error("Erreur de connexion à la blockchain :", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initBlockchain();
+    connectWallet();
   }, []);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <AlertCircle className="text-red-500" />
-        Alertes de stockage abusif
-      </h1>
+  useEffect(() => {
+    if (account) {
+      fetchViolations();
+      fetchExpiringBatches();
+    }
+  }, [account]);
 
-      {loading ? (
-        <p>Chargement des données blockchain...</p>
-      ) : overThreshold.length === 0 ? (
-        <p className="text-green-600">✅ Aucun abus détecté</p>
-      ) : (
-        <div className="bg-red-100 border border-red-400 p-4 rounded-lg">
-          <p className="mb-3 text-red-700 font-semibold">
-            Producteurs dépassant le seuil de stockage :
-          </p>
-          <ul className="list-disc ml-6 text-red-800">
-            {overThreshold.map((p, idx) => (
-              <li key={idx}>
-                Adresse : <strong>{p.address}</strong> — Stock : {p.balance}
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const accounts = await provider.send('eth_requestAccounts', []);
+      setAccount(accounts[0]);
+    } else {
+      alert('Please install MetaMask!');
+    }
+  };
+
+  const fetchViolations = async () => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, MilkSupplyChain.abi, provider);
+
+    try {
+      const ids = await contract.violationsByHolder(account);
+      const allViolations = await Promise.all(ids.map((id) => contract.violations(id)));
+      setViolations(allViolations);
+    } catch (err) {
+      console.error("Failed to fetch violations:", err);
+    }
+  };
+
+  const fetchExpiringBatches = async () => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, MilkSupplyChain.abi, provider);
+
+    try {
+      const maxDuration = await contract.maxStorageDuration();
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      const batchIds = await contract.batchesByOwner(account);
+      const batchDetails = await Promise.all(batchIds.map((id) =>
+        contract.batches(id).then((data) => ({ ...data, id }))
+      ));
+
+      const nearExpiry = batchDetails.filter((batch) =>
+        !batch.expired &&
+        currentTime > Number(batch.timestamp) + Number(maxDuration) - 2 * 24 * 60 * 60
+      );
+
+      setExpiringBatches(nearExpiry);
+    } catch (err) {
+      console.error("Failed to fetch batches:", err);
+    }
+  };
+
+  return (
+    <div className="p-6 font-sans">
+      <h1 className="text-2xl font-bold mb-4">Milk Supply Chain Alerts</h1>
+      <p className="mb-4">Connected wallet: <strong>{account}</strong></p>
+
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-2">Your Active Violations</h2>
+        {violations.length === 0 ? (
+          <p>No violations found.</p>
+        ) : (
+          <ul className="list-disc list-inside">
+            {violations.map((v, i) => (
+              <li key={i}>
+                Type: {v.violationType}, Batch ID: {v.batchId.toString()}, Time: {new Date(Number(v.detectionTime) * 1000).toLocaleString()}
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Batches Nearing Expiration</h2>
+        {expiringBatches.length === 0 ? (
+          <p>No batches near expiration.</p>
+        ) : (
+          <ul className="list-disc list-inside">
+            {expiringBatches.map((b, i) => (
+              <li key={i}>
+                Batch ID: {b.id.toString()}, Quantity: {b.quantity.toString()}, Created: {new Date(Number(b.timestamp) * 1000).toLocaleString()}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };
 
-export default Alertes;
+export default AlertsPage;

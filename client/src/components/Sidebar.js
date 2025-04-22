@@ -1,5 +1,6 @@
 import React, { useState, useContext, createContext } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
 import {
   LayoutDashboard,
   PackageCheck,
@@ -24,6 +25,7 @@ const menuItems = [
 ];
 
 const Sidebar = () => {
+  const AppContext=useAppContext()
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
 
@@ -58,8 +60,10 @@ const Sidebar = () => {
 
         {/* Menu Items */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
+           {menuItems.map((item) =>  {if (AppContext.role === 'admin' &&( item.path === '/stocks'|| item.path==="/batches")) {
+      return null;
+    } 
+    return <Link
               key={item.name}
               to={item.path}
               className={`
@@ -71,7 +75,7 @@ const Sidebar = () => {
               {item.icon}
               {!isCollapsed && <span>{item.name}</span>}
             </Link>
-          ))}
+})}
         </nav>
 
         {/* Footer */}

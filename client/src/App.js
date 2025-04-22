@@ -8,7 +8,8 @@ import Alertes from "./pages/Alertes";
 import Batches from "./pages/Batches";
 import Stocks from "./pages/Stocks";
 import Transactions from "./pages/Transactions";
-import ProducerResellerDashboard from "./pages/ProducerResellerDashboard";
+import ProducerDashboard from "./pages/ProducerDashboard";
+import ResellerDashboard from "./pages/ResellerDashboard";
 import AuthorityDashboard from "./pages/AuthorityDashboard";
 import { AppProvider } from "./context/AppContext";
 import LandingPage from "./pages/LandingPage";
@@ -74,7 +75,8 @@ function App() {
                   <Route path="/batches" element={<Batches />} />
                   <Route path="/stocks" element={<Stocks />} />
                   <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/producer-reseller" element={<ProducerResellerDashboard />} />
+                  <Route path="/producer" element={<ProducerDashboard />} />
+                  <Route path="/reseller" element={<ResellerDashboard />} />
                   <Route path="/authority" element={<AuthorityDashboard />} />
                 </Routes>
               </div>

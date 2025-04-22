@@ -1,7 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import AuthorityDashboard from "./AuthorityDashboard";
-import ProducerResellerDashboard from "./ProducerResellerDashboard";
+import ProducerDashboard from "./ProducerDashboard";
+import ResellerDashboard from "./ResellerDashboard";
 import { useAppContext } from "../context/AppContext";
 
 const RoleBasedDashboard = () => {
@@ -23,8 +24,10 @@ const RoleBasedDashboard = () => {
 
   return (
     <div>
-      {role === "producer-reseller" ? (
-        <ProducerResellerDashboard />
+      {role === "producer" ? (
+        <ProducerDashboard />)
+        :role === "reseller" ? (
+          <ResellerDashboard />
       ) : role === "admin" ? (
         <AuthorityDashboard />
       ) : (

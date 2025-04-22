@@ -10,7 +10,7 @@ const MilkTransactionHistory = () => {
   const [contract, setContract] = useState(null);
 
   // Contract address from your previous input
-  const contractAddress = "0xba3a425E2229a98f152CD3357269f7d42d4a6683";
+  const contractAddress = "0xf6E8356bA0Bc07eeaa3AC6450E3CbEcE1386010c";
   
   // ABI with event definitions - we specifically need the Transferred event
   const contractABI = [
@@ -165,7 +165,7 @@ const MilkTransactionHistory = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gray-50 min-h-screen">
       <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-blue-800 mb-6">Milk Supply Chain Transaction History</h1>
+        <h1 className="text-2xl font-bold text-blue-800 mb-6">Transaction History</h1>
         
         {loading ? (
           <div className="text-center py-10">
