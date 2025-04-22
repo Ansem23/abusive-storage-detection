@@ -1,21 +1,9 @@
 // client/src/pages/Settings.js
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
+import MilkSupplyChain from "../contracts/MilkSupplyChain.json";
 
-const contractABI = [
-  "function isAdmin(address) view returns (bool)",
-  "function isProducer(address) view returns (bool)",
-  "function isReseller(address) view returns (bool)",
-  "function blacklistedHolders(address) view returns (bool)",
-  "function addAdmin(address)",
-  "function removeAdmin(address)",
-  "function setProducer(address)",
-  "function removeProducer(address)",
-  "function setReseller(address, uint256)",
-  "function removeReseller(address)",
-  "function changeMaxQuantityReseller(address, uint256)",
-  "function removeFromBlacklist(address)",
-];
+const contractABI = MilkSupplyChain.abi;
 
 const Settings = () => {
   const [account, setAccount] = useState("");
@@ -34,29 +22,36 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
 
   // Votre adresse de contrat / RPC / clé privée
-  const contractAddress = "0x39369A6828411BEA916876f36e0f74901e686218";
+  const contractAddress = "0x4EebE79FbD9d69c964A035857dF0f422a9C5a385";
   const ganacheRPC = "http://127.0.0.1:7545";
-  const privateKey =
-    "0xd88511025140e10e257cb5d709ebf3ddd346f3bd48f8bc5ec5da0631ecc6a39e";
-
   // Initialisation du contrat et connexion
   useEffect(() => {
     const init = async () => {
       try {
-        const provider = new ethers.providers.JsonRpcProvider(ganacheRPC);
-        const wallet = new ethers.Wallet(privateKey, provider);
-        setAccount(wallet.address);
-
-        const milkContract = new ethers.Contract(contractAddress, contractABI, wallet);
+        if (!window.ethereum) {
+          setActionStatus({ type: "error", message: "MetaMask not detected" });
+          return;
+        }
+  
+        // Request account access
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const userAddress = await signer.getAddress();
+        setAccount(userAddress);
+  
+        // Connect to contract with signer
+        const milkContract = new ethers.Contract(contractAddress, contractABI, signer);
         setContract(milkContract);
       } catch (err) {
-        console.error("Initialization error:", err);
-        setActionStatus({ type: "error", message: `Failed to connect: ${err.message}` });
+        console.error("MetaMask connection error:", err);
+        setActionStatus({ type: "error", message: `Failed to connect MetaMask: ${err.message}` });
       }
     };
-
+  
     init();
-  }, [contractAddress, ganacheRPC, privateKey]);
+  }, []);
+  
 
   // Vérification des rôles
   const checkRoles = async () => {
@@ -215,12 +210,12 @@ const Settings = () => {
                 Remove Producer
               </button>
 
-              {/* Reseller */}
+              {/* Reseller RANIM ZID INPUT BCH TATTIH MAXQUANTITY*/}
               <button
                 onClick={() => handleRoleAction("setReseller", [address, newMaxQuantity])}
                 className="bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded 
                   transition-transform hover:scale-105"
-              >
+              > 
                 Add Reseller
               </button>
               <button

@@ -15,7 +15,7 @@ import {
 export const SidebarContext = createContext();
 
 const menuItems = [
-  { name: "Dashboard", path: "/", icon: <LayoutDashboard size={18} /> },
+  { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
   { name: "Stocks", path: "/stocks", icon: <PackageCheck size={18} /> },
   { name: "Batches", path: "/batches", icon: <PackageSearch size={18} /> },
   { name: "Transactions", path: "/transactions", icon: <ArrowRightLeft size={18} /> },
