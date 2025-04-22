@@ -10,7 +10,7 @@ export const AppProvider = ({ children }) => {
   const [account, setAccount] = useState("");
   const [role, setRole] = useState(null); // Add role state
 
-  const connectWallet = async () => {
+  /*const connectWallet = async () => {
     if (!window.ethereum) {
       alert("MetaMask is not installed. Please install it to use this feature.");
       return { success: false };
@@ -58,7 +58,67 @@ export const AppProvider = ({ children }) => {
       alert("Wallet connection failed.");
       return { success: false };
     }
+  };*/
+
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask is not installed. Please install it to use this feature.");
+      return { success: false };
+    }
+  
+    try {
+      console.log(" Requesting account access...");
+      const web3Instance = new Web3(window.ethereum);
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+  
+      const accounts = await web3Instance.eth.getAccounts();
+      console.log("Accounts:", accounts);
+      setAccount(accounts[0]);
+  
+      const networkId = await web3Instance.eth.net.getId();
+      console.log(" Current Network ID:", networkId);
+      console.log(" Networks in ABI JSON:", MilkSupplyChain.networks);
+  
+      const deployedNetwork = MilkSupplyChain.networks[networkId];
+      if (!deployedNetwork) {
+        console.error("No deployed network found for network ID:", networkId);
+        alert("Smart contract not deployed to the current network. Please switch networks.");
+        return { success: false };
+      }
+  
+      console.log(" Contract address:", deployedNetwork.address);
+  
+      const instance = new web3Instance.eth.Contract(
+        MilkSupplyChain.abi,
+        deployedNetwork.address
+      );
+      console.log(" Contract instance created:", instance);
+      setWeb3(web3Instance);
+      setContract(instance);
+  
+      //  Check user roles
+      const isAdmin = await instance.methods.isAdmin(accounts[0]).call();
+      const isProducer = await instance.methods.isProducer(accounts[0]).call();
+      const isReseller = await instance.methods.isReseller(accounts[0]).call();
+      console.log(" Roles: admin?", isAdmin, "producer?", isProducer, "reseller?", isReseller);
+  
+      let userRole = "unknown";
+      if (isAdmin) userRole = "admin";
+      else if (isProducer) userRole = "producer";
+      else if (isReseller) userRole = "reseller";
+  
+      setRole(userRole);
+      console.log("🎭 User role:", userRole);
+  
+      return { success: true, role: userRole };
+    } catch (error) {
+      console.error("Detailed Wallet Connection Error:", error);
+      alert("Wallet connection failed.");
+      return { success: false };
+    }
   };
+  
   
 
   useEffect(() => {
