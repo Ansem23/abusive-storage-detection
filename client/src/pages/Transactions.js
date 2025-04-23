@@ -9,10 +9,14 @@ const MilkTransactionHistory = () => {
   const [provider, setProvider] = useState(null);
   const [contract, setContract] = useState(null);
 
-  // Contract address from your previous input
-  const contractAddress = "0xf6E8356bA0Bc07eeaa3AC6450E3CbEcE1386010c";
-  
-  // ABI with event definitions - we specifically need the Transferred event
+  // Filters and pagination
+  const [filterType, setFilterType] = useState('');
+  const [filterBatchId, setFilterBatchId] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Contract details
+  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
   const contractABI = [
     "event Transferred(address indexed from, address indexed to, uint256 quantity, uint256 batchId)",
     "event Produced(uint256 batchId, address indexed producer, uint256 quantity, uint256 timestamp)",
@@ -23,25 +27,21 @@ const MilkTransactionHistory = () => {
     const initWeb3 = async () => {
       try {
         setLoading(true);
-        // Check if MetaMask is installed
         if (!window.ethereum) {
           throw new Error("Please install MetaMask to use this dApp");
         }
-        
-        // Request account access
+
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         const ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = ethersProvider.getSigner();
         const userAddress = await signer.getAddress();
-        
+
         setAccount(userAddress);
         setProvider(ethersProvider);
-        
-        // Create contract instance
+
         const milkContract = new ethers.Contract(contractAddress, contractABI, ethersProvider);
         setContract(milkContract);
-        
-        // Load past events
+
         await fetchTransferEvents(milkContract, ethersProvider);
       } catch (err) {
         console.error("Initialization error:", err);
@@ -50,27 +50,21 @@ const MilkTransactionHistory = () => {
         setLoading(false);
       }
     };
-    
+
     initWeb3();
   }, [contractAddress]);
 
   const fetchTransferEvents = async (contractInstance, providerInstance) => {
     try {
-      // Get current block number for reference
       const currentBlock = await providerInstance.getBlockNumber();
-      
-      // Fetch transfer events - we'll look back 10000 blocks or to genesis
       const fromBlock = Math.max(0, currentBlock - 10000);
-      
-      // Create filter for Transferred events
+
       const transferFilter = contractInstance.filters.Transferred();
       const transferEvents = await contractInstance.queryFilter(transferFilter, fromBlock, "latest");
-      
-      // Create filter for Produced events
+
       const producedFilter = contractInstance.filters.Produced();
       const producedEvents = await contractInstance.queryFilter(producedFilter, fromBlock, "latest");
-      
-      // Process the transfer events
+
       const transferData = await Promise.all(transferEvents.map(async (event) => {
         const block = await event.getBlock();
         return {
@@ -84,8 +78,7 @@ const MilkTransactionHistory = () => {
           timestamp: new Date(block.timestamp * 1000).toLocaleString()
         };
       }));
-      
-      // Process the production events
+
       const productionData = await Promise.all(producedEvents.map(async (event) => {
         const block = await event.getBlock();
         return {
@@ -98,12 +91,8 @@ const MilkTransactionHistory = () => {
           timestamp: new Date(block.timestamp * 1000).toLocaleString()
         };
       }));
-      
-      // Combine both types of events
-      const allTransactions = [...transferData, ...productionData].sort((a, b) => 
-        b.blockNumber - a.blockNumber
-      );
-      
+
+      const allTransactions = [...transferData, ...productionData].sort((a, b) => b.blockNumber - a.blockNumber);
       setTransactions(allTransactions);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -111,62 +100,50 @@ const MilkTransactionHistory = () => {
     }
   };
 
-  // Helper function to truncate addresses for display
-  const truncateAddress = (address) => {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
+  const truncateAddress = (address) => `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
 
-  // Listen for new events in real time
-  useEffect(() => {
-    if (!contract) return;
-    
-    const handleTransfer = async (from, to, quantity, batchId, event) => {
-      const block = await event.getBlock();
-      const newTransaction = {
-        type: "Transfer",
-        txHash: event.transactionHash,
-        from,
-        to,
-        quantity: quantity.toString(),
-        batchId: batchId.toString(),
-        blockNumber: event.blockNumber,
-        timestamp: new Date(block.timestamp * 1000).toLocaleString()
-      };
-      
-      setTransactions(prev => [newTransaction, ...prev]);
-    };
-    
-    const handleProduction = async (batchId, producer, quantity, timestamp, event) => {
-      const block = await event.getBlock();
-      const newTransaction = {
-        type: "Production",
-        txHash: event.transactionHash,
-        producer,
-        quantity: quantity.toString(),
-        batchId: batchId.toString(),
-        blockNumber: event.blockNumber,
-        timestamp: new Date(block.timestamp * 1000).toLocaleString()
-      };
-      
-      setTransactions(prev => [newTransaction, ...prev]);
-    };
-    
-    // Set up event listeners
-    contract.on("Transferred", handleTransfer);
-    contract.on("Produced", handleProduction);
-    
-    // Clean up
-    return () => {
-      contract.off("Transferred", handleTransfer);
-      contract.off("Produced", handleProduction);
-    };
-  }, [contract]);
+  const filteredTransactions = transactions.filter((tx) => {
+    return (
+      (filterType ? tx.type === filterType : true) &&
+      (filterBatchId ? tx.batchId.includes(filterBatchId) : true)
+    );
+  });
+
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+
+  const exportToCSV = () => {
+    const csvContent = [
+      ["Type", "Batch ID", "From", "To", "Quantity", "Time", "Tx Hash"],
+      ...transactions.map((tx) => [
+        tx.type,
+        tx.batchId,
+        tx.from || "N/A",
+        tx.to || "N/A",
+        tx.quantity,
+        tx.timestamp,
+        tx.txHash,
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "transactions.csv";
+    link.click();
+  };
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gray-50 min-h-screen">
       <div className="bg-white shadow rounded-lg p-6">
         <h1 className="text-2xl font-bold text-blue-800 mb-6">Transaction History</h1>
-        
+
         {loading ? (
           <div className="text-center py-10">
             <p className="text-gray-600">Loading transaction history...</p>
@@ -181,10 +158,33 @@ const MilkTransactionHistory = () => {
               <h3 className="text-sm font-semibold text-blue-800 mb-1">Connected Address</h3>
               <p className="text-gray-700 truncate">{account}</p>
             </div>
-            
-            <h2 className="text-xl font-semibold text-blue-800 mb-4">All Transactions</h2>
-            
-            {transactions.length > 0 ? (
+
+            <div className="flex gap-4 mb-6">
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="p-2 border rounded"
+              >
+                <option value="">All Types</option>
+                <option value="Transfer">Transfer</option>
+                <option value="Production">Production</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Filter by Batch ID"
+                value={filterBatchId}
+                onChange={(e) => setFilterBatchId(e.target.value)}
+                className="p-2 border rounded"
+              />
+              <button
+                onClick={exportToCSV}
+                className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-900"
+              >
+                Export to CSV
+              </button>
+            </div>
+
+            {paginatedTransactions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white border rounded-lg overflow-hidden">
                   <thead className="bg-gray-100">
@@ -199,7 +199,7 @@ const MilkTransactionHistory = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.map((tx, index) => (
+                    {paginatedTransactions.map((tx, index) => (
                       <tr key={index} className="border-t hover:bg-gray-50">
                         <td className="py-3 px-4">
                           {tx.type === "Transfer" ? (
@@ -213,29 +213,16 @@ const MilkTransactionHistory = () => {
                           )}
                         </td>
                         <td className="py-3 px-4">{tx.batchId}</td>
-                        <td className="py-3 px-4">
-                          {tx.type === "Production" ? (
-                            <span className="text-gray-500">N/A</span>
-                          ) : (
-                            <span className="font-mono text-xs" title={tx.from}>{truncateAddress(tx.from)}</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          {tx.type === "Production" ? (
-                            <span className="font-mono text-xs" title={tx.producer}>{truncateAddress(tx.producer)}</span>
-                          ) : (
-                            <span className="font-mono text-xs" title={tx.to}>{truncateAddress(tx.to)}</span>
-                          )}
-                        </td>
+                        <td className="py-3 px-4">{tx.from ? truncateAddress(tx.from) : "N/A"}</td>
+                        <td className="py-3 px-4">{tx.to ? truncateAddress(tx.to) : "N/A"}</td>
                         <td className="py-3 px-4">{tx.quantity} units</td>
                         <td className="py-3 px-4">{tx.timestamp}</td>
                         <td className="py-3 px-4">
-                          <a 
-                            href={`https://etherscan.io/tx/${tx.txHash}`} 
-                            target="_blank" 
+                          <a
+                            href={`https://etherscan.io/tx/${tx.txHash}`}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="font-mono text-xs text-blue-600 hover:underline"
-                            title={tx.txHash}
                           >
                             {truncateAddress(tx.txHash)}
                           </a>
@@ -248,10 +235,26 @@ const MilkTransactionHistory = () => {
             ) : (
               <p className="text-gray-500 italic">No transactions found in the recent blocks.</p>
             )}
-            
-            <p className="text-sm text-gray-500 mt-4">
-              Note: Only showing transactions from approximately the last 10,000 blocks.
-            </p>
+
+            <div className="flex justify-between items-center mt-4">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </>
         )}
       </div>

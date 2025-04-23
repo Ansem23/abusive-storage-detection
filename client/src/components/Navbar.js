@@ -23,7 +23,7 @@ const Navbar = () => {
   const { role } = useAppContext(); // Use AppContext to get the role
   const location = useLocation();
   const { isAdmin, setIsAdmin } = useAdmin(); // Destructure both isAdmin and setIsAdmin
-  const contractAddress = "0x478d6EA83cF94Db5EE4cA91EA138F5a9b65a1A49";
+  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
   const contractABI = MilkSupplyChain.abi;
 
   useEffect(() => {
