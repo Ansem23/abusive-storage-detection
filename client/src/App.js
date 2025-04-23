@@ -1,8 +1,7 @@
 // App.js
 import React, { useEffect } from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom"; // Import useLocation
-import Sidebar from "./components/Sidebar";
-import RoleBasedDashboard from "./pages/RoleBasedDashboard"; // Import the RoleBasedDashboard component
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import RoleBasedDashboard from "./pages/RoleBasedDashboard";
 import Settings from "./pages/Settings";
 import Alertes from "./pages/Alertes";
 import Batches from "./pages/Batches";
@@ -13,7 +12,8 @@ import ResellerDashboard from "./pages/ResellerDashboard";
 import AuthorityDashboard from "./pages/AuthorityDashboard";
 import { AppProvider } from "./context/AppContext";
 import LandingPage from "./pages/LandingPage";
-import { SidebarContext } from "./components/Sidebar";
+import Navbar from "./components/Navbar";
+import { AdminProvider } from './context/AdminContext';
 
 // Inactivity timer component
 const InactivityTimer = ({ children }) => {
@@ -56,34 +56,28 @@ function App() {
 
   return (
     <AppProvider>
-      <InactivityTimer>
-        <SidebarContext.Consumer>
-          {isCollapsed => (
-            <div className="flex min-h-screen bg-gray-100">
-              {/* Conditionally render Sidebar */}
-              {location.pathname !== "/" && <Sidebar />}
-              <div
-                className={`flex-1 transition-all duration-300 ease-in-out ${
-                  location.pathname !== "/" && (isCollapsed ? 'ml-20' : 'ml-64')
-                }`}
-              >
-                <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/dashboard" element={<RoleBasedDashboard />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/alerts" element={<Alertes />} />
-                  <Route path="/batches" element={<Batches />} />
-                  <Route path="/stocks" element={<Stocks />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/producer" element={<ProducerDashboard />} />
-                  <Route path="/reseller" element={<ResellerDashboard />} />
-                  <Route path="/authority" element={<AuthorityDashboard />} />
-                </Routes>
-              </div>
+      <AdminProvider>
+        <InactivityTimer>
+          <div className="flex flex-col min-h-screen bg-gray-100">
+            {/* Render Navbar */}
+            {location.pathname !== "/" && <Navbar />}
+            <div className={`flex-1 transition-all duration-300 ease-in-out`}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/dashboard" element={<RoleBasedDashboard />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/alerts" element={<Alertes />} />
+                <Route path="/batches" element={<Batches />} />
+                <Route path="/stocks" element={<Stocks />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/producer" element={<ProducerDashboard />} />
+                <Route path="/reseller" element={<ResellerDashboard />} />
+                <Route path="/authority" element={<AuthorityDashboard />} />
+              </Routes>
             </div>
-          )}
-        </SidebarContext.Consumer>
-      </InactivityTimer>
+          </div>
+        </InactivityTimer>
+      </AdminProvider>
     </AppProvider>
   );
 }

@@ -135,7 +135,7 @@ const AuthorityDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6"> {/* Removed ml-64 */}
+    <div className="min-h-screen bg-gradient-to-r from-blue-900 via-blue-800 to-black p-6">
       {/* Welcome Banner */}
       <div className="bg-[#1957a8] text-white p-4 rounded-lg shadow mb-6">
         <h1 className="text-2xl font-bold">👮‍♂️ Authority Control Dashboard</h1>

@@ -23,16 +23,25 @@ const RoleBasedDashboard = () => {
   }
 
   return (
-    <div>
-      {role === "producer" ? (
-        <ProducerDashboard />)
-        :role === "reseller" ? (
-          <ResellerDashboard />
-      ) : role === "admin" ? (
-        <AuthorityDashboard />
-      ) : (
-        <div>Unauthorized: Invalid role</div>
-      )}
+    <div className="min-h-screen bg-gradient-to-r from-blue-900 via-blue-800 to-black">
+      {/* Add margin to move the welcome bar further down */}
+      <div className="bg-blue-800 text-white text-center py-4 mb-8 mt-12 shadow-lg">
+        <h1 className="text-2xl font-bold">
+          Welcome to Dashboard ({role.charAt(0).toUpperCase() + role.slice(1)})
+        </h1>
+      </div>
+      {/* Dashboard content */}
+      <div className="p-6">
+        {role === "producer" ? (
+          <ProducerDashboard />)
+          :role === "reseller" ? (
+            <ResellerDashboard />
+        ) : role === "admin" ? (
+          <AuthorityDashboard />
+        ) : (
+          <div>Unauthorized: Invalid role</div>
+        )}
+      </div>
     </div>
   );
 };
