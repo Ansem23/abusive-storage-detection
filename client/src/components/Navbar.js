@@ -48,7 +48,7 @@ const Navbar = () => {
 
   return (
     <nav
-      className="fixed top-0 left-0 w-full z-30 bg-gradient-to-r from-blue-900 via-blue-800 to-black bg-opacity-40 text-white shadow-lg h-28 flex items-center justify-between px-10"
+      className="fixed top-0 left-0 w-full z-30 bg-gradient-to-r from-blue-900 via-blue-800 to-black bg-opacity-10 text-white shadow-lg h-28 flex items-center justify-between px-10"
       style={{ backdropFilter: "blur(25px)" }} // Stronger blur effect for transparency
     >
       {/* Logo and Title */}
@@ -58,7 +58,7 @@ const Navbar = () => {
           alt="MilkChain"
           className="h-20 w-20 rounded-full"
         />
-        <h2 className="text-4xl font-bold">MilkChain</h2>
+        <h2 className="text-4xl font-bold">StockGuard</h2>
       </div>
 
       {/* Menu Items */}
