@@ -27,7 +27,7 @@ const Settings = () => {
   const { setIsAdmin: setGlobalIsAdmin } = useAdmin();
 
   // Votre adresse de contrat / RPC / clé privée
-  const contractAddress = "0x478d6EA83cF94Db5EE4cA91EA138F5a9b65a1A49";
+  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
   const ganacheRPC = "http://127.0.0.1:7545";
 
   // Initialisation du contrat et connexion
