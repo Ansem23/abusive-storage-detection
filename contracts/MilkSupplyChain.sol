@@ -13,14 +13,26 @@ contract MilkSupplyChain is Ownable {
         address currentOwner;
         bool expired;
     }
-    
+    enum ViolationType {
+    ExcessiveStorage,
+    QuantityOverflow
+}
+
     struct StorageViolation {
+        ViolationType violationType;
         address holder;
         uint256 batchId;
         uint256 detectionTime;
         bool resolved;
     }
-    
+    struct Position{
+        uint256 latitude;
+        uint256 longitude;
+    }
+
+    uint256 public totalResellers=0;
+    uint256 public totalProducers=0;
+    uint256 public totalViolations=0;
     uint256 public maxStorageDuration = 30 days;
     uint256 public nextBatchId;
     uint256 public nextViolationId;
@@ -34,7 +46,8 @@ contract MilkSupplyChain is Ownable {
     mapping(address => bool) public isReseller;
     mapping(address => uint256) public maxQuantityPerReseller;
     mapping(address => bool) public isProducer;
-    
+    mapping(address => string) public addressName;
+    mapping(address=> Position) public addressPosition;
     // mappings mtaa violations
     mapping(uint256 => StorageViolation) public violations;
     mapping(address => uint256[]) public violationsByHolder;
@@ -101,6 +114,7 @@ contract MilkSupplyChain is Ownable {
     function setReseller(address account, uint256 maxQuantity) external onlyAdmin {
         require(!isReseller[account], "Address is already a reseller");
         require(!blacklistedHolders[account], "Address is blacklisted for abusive storage");
+        totalResellers++;
         isReseller[account] = true;
         maxQuantityPerReseller[account] = maxQuantity;
         emit ResellerAdded(account);
@@ -115,6 +129,7 @@ contract MilkSupplyChain is Ownable {
     function removeReseller(address account) external onlyAdmin {
         require(isReseller[account], "Address is not a reseller");
         isReseller[account] = false;
+        totalResellers--;
         emit ResellerRemoved(account);
     }
     
@@ -122,12 +137,14 @@ contract MilkSupplyChain is Ownable {
         require(!isProducer[account], "Address is already a producer");
         require(!blacklistedHolders[account], "Address is blacklisted for abusive storage");
         isProducer[account] = true;
+        totalProducers++;
         emit ProducerAdded(account);
     }
     
     function removeProducer(address account) external onlyAdmin {
         require(isProducer[account], "Address is not a producer");
         isProducer[account] = false;
+        totalProducers--;
         emit ProducerRemoved(account);
     }
     
@@ -168,6 +185,8 @@ contract MilkSupplyChain is Ownable {
         require(!blacklistedHolders[to], "Recipient is blacklisted for abusive storage");
         require(batches[batchId].currentOwner == msg.sender, "You don't own this batch");
         require(batches[batchId].quantity >= amount, "Insufficient quantity in batch");
+        //check for quantity
+        checkForQuantity(to,amount,batchId);
         
         // Check for abusive storage
         checkForAbusiveStorage(batchId);
@@ -202,6 +221,7 @@ contract MilkSupplyChain is Ownable {
         
         emit Transferred(msg.sender, to, amount, batchId);
     }
+
     
     function checkForAbusiveStorage(uint256 batchId) public returns (bool) {
         Batch storage batch = batches[batchId];
@@ -210,12 +230,18 @@ contract MilkSupplyChain is Ownable {
             // Report violation
             uint256 violationId = nextViolationId++;
             violations[violationId] = StorageViolation({
+                violationType:ViolationType.ExcessiveStorage,
                 holder: batch.currentOwner,
                 batchId: batchId,
                 detectionTime: block.timestamp,
                 resolved: false
             });
-            
+            if(isProducer[batch.currentOwner]){
+                totalProducers--;
+            }
+            if(isReseller[batch.currentOwner]){
+                totalResellers--;
+            }
             violationsByHolder[batch.currentOwner].push(violationId);
             
             emit AbusiveStorageDetected(violationId, batch.currentOwner, batchId, block.timestamp);
@@ -246,7 +272,7 @@ contract MilkSupplyChain is Ownable {
         emit HolderRemovedFromBlacklist(holder);
     }
     
-    function checkAllBatchesForAbusiveStorage() external returns (uint256) {
+    function checkAllBatchesForAbusiveStorage() external {
         uint256 violationCount = 0;
         
         for (uint256 i = 0; i < nextBatchId; i++) {
@@ -257,7 +283,7 @@ contract MilkSupplyChain is Ownable {
             }
         }
         
-        return violationCount;
+        totalViolations=violationCount;
     }
     
     function getActiveViolationsByHolder(address holder) external view returns (uint256[] memory) {
@@ -353,4 +379,57 @@ contract MilkSupplyChain is Ownable {
         if (isReseller[account]) return "reseller";
         return "unknown";
     }
+    function setPosition(address account,uint256 latitude,uint256 longitude) external {
+        require(isAdmin[msg.sender], "Address is not an admin");
+        addressPosition[account].latitude=latitude;
+        addressPosition[account].longitude=longitude;
+    }
+    function setName(address account, string memory name)public {
+        require(isAdmin[msg.sender], "Address is not an admin");
+        addressName[account]=name;
+    }
+    function triggerFakeViolation(address holder, uint256 batchId, ViolationType vType) external onlyAdmin {
+    uint256 violationId = nextViolationId++;
+    violations[violationId] = StorageViolation({
+        violationType: vType,
+        holder: holder,
+        batchId: batchId,
+        detectionTime: block.timestamp,
+        resolved: false
+    });
+
+    violationsByHolder[holder].push(violationId);
+
+    emit AbusiveStorageDetected(violationId, holder, batchId, block.timestamp);
+
+    if (violationsByHolder[holder].length >= violationThreshold && !blacklistedHolders[holder]) {
+        blacklistedHolders[holder] = true;
+        emit HolderBlacklisted(holder, violationsByHolder[holder].length);
+    }
+}
+function checkForQuantity(address to,uint256 amount,uint256 batchId) public{
+        Batch storage batch = batches[batchId];
+        if (stockBalance[to]+amount>maxQuantityPerReseller[to]){
+            uint256 violationId = nextViolationId++;
+            violations[violationId] = StorageViolation({
+                violationType: ViolationType.QuantityOverflow,
+                holder: batch.currentOwner,
+                batchId: batchId,
+                detectionTime: block.timestamp,
+                resolved: false
+            });
+            
+            violationsByHolder[batch.currentOwner].push(violationId);
+            
+            emit AbusiveStorageDetected(violationId, batch.currentOwner, batchId, block.timestamp);
+            
+            // holder  blacklisted??
+            if (violationsByHolder[batch.currentOwner].length >= violationThreshold) {
+                blacklistedHolders[batch.currentOwner] = true;
+                emit HolderBlacklisted(batch.currentOwner, violationsByHolder[batch.currentOwner].length);
+                revert("Recipient exceeds maximum allowed stock");
+        }
+        }}
+
+
 }

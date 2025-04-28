@@ -23,7 +23,7 @@ const Navbar = () => {
   const { role } = useAppContext(); // Use AppContext to get the role
   const location = useLocation();
   const { isAdmin, setIsAdmin } = useAdmin(); // Destructure both isAdmin and setIsAdmin
-  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
+  const contractAddress = "0xa6d19590f0ca1Ae447f143354e058F6ca6Cf14cB";
   const contractABI = MilkSupplyChain.abi;
 
   useEffect(() => {
@@ -45,10 +45,9 @@ const Navbar = () => {
 
     checkAdmin();
   }, [setIsAdmin]); // Add setIsAdmin to dependency array
-
   return (
     <nav
-      className="fixed top-0 left-0 w-full z-30 bg-gradient-to-r from-blue-900 via-blue-800 to-black bg-opacity-10 text-white shadow-lg h-28 flex items-center justify-between px-10"
+      className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-blue-900 via-blue-800 to-black bg-opacity-10 text-white shadow-lg h-28 flex items-center justify-between px-10 "
       style={{ backdropFilter: "blur(25px)" }} // Stronger blur effect for transparency
     >
       {/* Logo and Title */}

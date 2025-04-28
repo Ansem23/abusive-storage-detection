@@ -14,6 +14,8 @@ import { AppProvider } from "./context/AppContext";
 import LandingPage from "./pages/LandingPage";
 import Navbar from "./components/Navbar";
 import { AdminProvider } from './context/AdminContext';
+import UserInspectionPage from './pages/UserInspectionPage'
+import { User } from "lucide-react";
 
 // Inactivity timer component
 const InactivityTimer = ({ children }) => {
@@ -73,6 +75,7 @@ function App() {
                 <Route path="/producer" element={<ProducerDashboard />} />
                 <Route path="/reseller" element={<ResellerDashboard />} />
                 <Route path="/authority" element={<AuthorityDashboard />} />
+                {/*<Route path="/inspection" element={<UserInspectionPage/>}/>*/}
               </Routes>
             </div>
           </div>

@@ -27,7 +27,7 @@ const Settings = () => {
   const { setIsAdmin: setGlobalIsAdmin } = useAdmin();
 
   // Votre adresse de contrat / RPC / clé privée
-  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
+  const contractAddress = "0xa6d19590f0ca1Ae447f143354e058F6ca6Cf14cB";
   const ganacheRPC = "http://127.0.0.1:7545";
 
   // Initialisation du contrat et connexion
@@ -271,8 +271,92 @@ const Settings = () => {
           </div>
         )}
       </div>
+      <UpdateUserInfo contract={contract}/>
     </div>
   );
 };
 
 export default Settings;
+
+function UpdateUserInfo({ contract }) {
+  const [account, setAccount] = useState("");
+  const [name, setName] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+
+  const handleSetName = async () => {
+    try {
+      const tx = await contract.setName(account, name);
+      await tx.wait();
+      alert("Name updated successfully!");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update name");
+    }
+  };
+
+  const handleSetPosition = async () => {
+    try {
+      const tx = await contract.setPosition(account, latitude, longitude);
+      await tx.wait();
+      alert("Position updated successfully!");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update position");
+    }
+  };
+
+  return (
+    <div style={{ padding: "20px", maxWidth: "400px", margin: "auto" }}>
+      <h2>Update User Info</h2>
+
+      <div style={{ marginBottom: "10px" }}>
+        <label>Account Address:</label><br />
+        <input
+          type="text"
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div style={{ marginBottom: "10px" }}>
+        <label>Name:</label><br />
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <button onClick={handleSetName} style={{ width: "100%", marginBottom: "20px" }}>
+        Set Name
+      </button>
+
+      <div style={{ marginBottom: "10px" }}>
+        <label>Latitude:</label><br />
+        <input
+          type="number"
+          value={latitude}
+          onChange={(e) => setLatitude(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div style={{ marginBottom: "10px" }}>
+        <label>Longitude:</label><br />
+        <input
+          type="number"
+          value={longitude}
+          onChange={(e) => setLongitude(e.target.value)}
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <button onClick={handleSetPosition} style={{ width: "100%" }}>
+        Set Position
+      </button>
+    </div>
+  );
+}
