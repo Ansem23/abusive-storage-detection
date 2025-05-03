@@ -75,7 +75,7 @@ function App() {
                 <Route path="/producer" element={<ProducerDashboard />} />
                 <Route path="/reseller" element={<ResellerDashboard />} />
                 <Route path="/authority" element={<AuthorityDashboard />} />
-                {/*<Route path="/inspection" element={<UserInspectionPage/>}/>*/}
+                <Route path="/inspection" element={<UserInspectionPage/>}/>
               </Routes>
             </div>
           </div>

@@ -431,5 +431,10 @@ function checkForQuantity(address to,uint256 amount,uint256 batchId) public{
         }
         }}
 
+ function blacklistManually(address holder) external onlyAdmin {
+    require(!blacklistedHolders[holder], "Already blacklisted");
+    blacklistedHolders[holder] = true;
+    emit HolderBlacklisted(holder, violationsByHolder[holder].length);
+}
 
 }

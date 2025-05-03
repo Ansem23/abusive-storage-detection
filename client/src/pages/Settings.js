@@ -1,4 +1,3 @@
-// client/src/pages/Settings.js
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +5,8 @@ import MilkSupplyChain from "../contracts/MilkSupplyChain.json";
 import { useAdmin } from '../context/AdminContext';
 
 const contractABI = MilkSupplyChain.abi;
+const contractAddress = "0xFAcBc93EC946Ef2F709504F23eA41770a361A07e";
+const ganacheRPC = "http://127.0.0.1:7545";
 
 const Settings = () => {
   const [account, setAccount] = useState("");
@@ -26,11 +27,6 @@ const Settings = () => {
   const navigate = useNavigate();
   const { setIsAdmin: setGlobalIsAdmin } = useAdmin();
 
-  // Votre adresse de contrat / RPC / clé privée
-  const contractAddress = "0xa6d19590f0ca1Ae447f143354e058F6ca6Cf14cB";
-  const ganacheRPC = "http://127.0.0.1:7545";
-
-  // Initialisation du contrat et connexion
   useEffect(() => {
     const init = async () => {
       try {
@@ -64,12 +60,11 @@ const Settings = () => {
         setLoading(false); // Stop loading
       }
     };
-  
+
     init();
   }, [navigate, setGlobalIsAdmin]);
-  
 
-  // Vérification des rôles
+  // Check the roles of an address
   const checkRoles = async () => {
     if (!ethers.utils.isAddress(address)) {
       setActionStatus({ type: "error", message: "Invalid address" });
@@ -108,7 +103,7 @@ const Settings = () => {
     }
   };
 
-  // Fonction générique pour les actions
+  // Generic function for role actions
   const handleRoleAction = async (action, params = []) => {
     if (!contract || !address) {
       setActionStatus({
@@ -134,7 +129,6 @@ const Settings = () => {
     }
   };
 
-
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-r from-blue-900 via-blue-800 to-black">
       {/* Top Bar */}
@@ -151,7 +145,6 @@ const Settings = () => {
           Admin Panel
         </h1>
 
-        {/* Two Columns Layout */}
         <div className="grid gap-12 md:grid-cols-2">
           {/* Left Column: Check Roles */}
           <div className="bg-gray-50 p-8 rounded shadow flex flex-col justify-between">
@@ -270,15 +263,15 @@ const Settings = () => {
             {actionStatus.message}
           </div>
         )}
+        <UpdateUserInfo contract={contract} />
       </div>
-      <UpdateUserInfo contract={contract}/>
+
+      
     </div>
   );
 };
 
-export default Settings;
-
-function UpdateUserInfo({ contract }) {
+const UpdateUserInfo = ({ contract }) => {
   const [account, setAccount] = useState("");
   const [name, setName] = useState("");
   const [latitude, setLatitude] = useState("");
@@ -307,12 +300,13 @@ function UpdateUserInfo({ contract }) {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "400px", margin: "auto" }}>
-      <h2>Update User Info</h2>
+    <div style={{marginTop:"10px", margin: "auto" }}>
+      <div className="bg-gray-50 p-8 rounded shadow">
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Update User Info</h2>
 
       <div style={{ marginBottom: "10px" }}>
         <label>Account Address:</label><br />
-        <input
+        <input className="w-full p-3 border rounded focus:ring focus:ring-blue-300"
           type="text"
           value={account}
           onChange={(e) => setAccount(e.target.value)}
@@ -322,7 +316,7 @@ function UpdateUserInfo({ contract }) {
 
       <div style={{ marginBottom: "10px" }}>
         <label>Name:</label><br />
-        <input
+        <input className="w-full p-3 border rounded focus:ring focus:ring-blue-300"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -330,14 +324,10 @@ function UpdateUserInfo({ contract }) {
         />
       </div>
 
-      <button onClick={handleSetName} style={{ width: "100%", marginBottom: "20px" }}>
-        Set Name
-      </button>
-
       <div style={{ marginBottom: "10px" }}>
         <label>Latitude:</label><br />
-        <input
-          type="number"
+        <input className="w-full p-3 border rounded focus:ring focus:ring-blue-300"
+          type="text"
           value={latitude}
           onChange={(e) => setLatitude(e.target.value)}
           style={{ width: "100%" }}
@@ -346,17 +336,18 @@ function UpdateUserInfo({ contract }) {
 
       <div style={{ marginBottom: "10px" }}>
         <label>Longitude:</label><br />
-        <input
-          type="number"
+        <input className="w-full p-3 border rounded focus:ring focus:ring-blue-300"
+          type="text"
           value={longitude}
           onChange={(e) => setLongitude(e.target.value)}
           style={{ width: "100%" }}
         />
       </div>
 
-      <button onClick={handleSetPosition} style={{ width: "100%" }}>
-        Set Position
-      </button>
-    </div>
+      <button onClick={handleSetName} style={{ width: "100%", padding: "10px", backgroundColor: "#2C6BED", color: "white" }}>Update Name</button>
+      <button onClick={handleSetPosition} style={{ width: "100%", padding: "10px", backgroundColor: "#2C6BED", color: "white", marginTop: "10px" }}>Update Position</button>
+    </div></div>
   );
-}
+};
+
+export default Settings;

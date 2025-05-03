@@ -25,7 +25,7 @@ const Stocks = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Contract address from your input
-  const contractAddress = "0xa6d19590f0ca1Ae447f143354e058F6ca6Cf14cB";
+  const contractAddress = "0xFAcBc93EC946Ef2F709504F23eA41770a361A07e";
 
   // Initialize and connect to the contract
   useEffect(() => {

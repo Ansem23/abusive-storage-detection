@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { Link} from "react-router-dom";
 import MilkSupplyChain from "../contracts/MilkSupplyChain.json";
 import { Bar, Pie } from "react-chartjs-2";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -411,9 +412,10 @@ const AuthorityDashboard = () => {
         <div className="col-span-2 bg-white p-4 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4">🔧 Quick Actions</h2>
           <div className="grid grid-cols-2 gap-4">
-            <button className="bg-[#1957a8] text-white py-3 px-4 rounded-lg shadow hover:bg-[#164a8e]">
-              🧾 Inspect Vendor
-            </button>
+            <Link
+            to="/Inspection"
+            className="bg-[#1957a8] text-white py-3 px-4 rounded-lg shadow hover:bg-[#164a8e]"
+          >🧾 Inspect Vendor</Link>
             <button className="bg-[#fbbb5c] text-white py-3 px-4 rounded-lg shadow hover:bg-[#ebab4c]">
               🚩 Flag for Review
             </button>
