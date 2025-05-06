@@ -25,7 +25,7 @@ const Batches = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   // Contract address from your input
-  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
+  const contractAddress = "0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b";
 
   // Initialize and connect to the contract
   useEffect(() => {

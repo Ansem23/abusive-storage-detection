@@ -5,7 +5,7 @@ import MilkSupplyChain from "../contracts/MilkSupplyChain.json";
 import { useAdmin } from '../context/AdminContext';
 
 const contractABI = MilkSupplyChain.abi;
-const contractAddress = "0xFAcBc93EC946Ef2F709504F23eA41770a361A07e";
+const contractAddress = "0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b";
 const ganacheRPC = "http://127.0.0.1:7545";
 
 const Settings = () => {

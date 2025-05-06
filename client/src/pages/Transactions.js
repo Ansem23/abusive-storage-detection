@@ -16,7 +16,7 @@ const MilkTransactionHistory = () => {
   const itemsPerPage = 10;
 
   // Contract details
-  const contractAddress = "0x1115F67Bcd427554D52ced98032F45C56E032074";
+  const contractAddress = "0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b";
   const contractABI = [
     "event Transferred(address indexed from, address indexed to, uint256 quantity, uint256 batchId)",
     "event Produced(uint256 batchId, address indexed producer, uint256 quantity, uint256 timestamp)",

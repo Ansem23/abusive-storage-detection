@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import MilkSupplyChain from '../contracts/MilkSupplyChain.json';
 
-const contractAddress = '0x1115F67Bcd427554D52ced98032F45C56E032074';
+const contractAddress = '0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b';
 
 const AlertsPage = () => {
   const [account, setAccount] = useState('');

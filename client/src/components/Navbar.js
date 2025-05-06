@@ -17,13 +17,15 @@ const menuItems = [
   { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={24} /> },
   { name: "Transactions", path: "/transactions", icon: <ArrowRightLeft size={24} /> },
   { name: "Alerts", path: "/alerts", icon: <AlertTriangle size={24} /> },
+  { name: "Batches", path: "/batches", icon: <PackageCheck size={24} /> }, // Added Batches
+  { name: "Stocks", path: "/stocks", icon: <PackageSearch size={24} /> }, // Added Stocks
 ];
 
 const Navbar = () => {
   const { role } = useAppContext(); // Use AppContext to get the role
   const location = useLocation();
   const { isAdmin, setIsAdmin } = useAdmin(); // Destructure both isAdmin and setIsAdmin
-  const contractAddress = "0xa6d19590f0ca1Ae447f143354e058F6ca6Cf14cB";
+  const contractAddress = "0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b";
   const contractABI = MilkSupplyChain.abi;
 
   useEffect(() => {

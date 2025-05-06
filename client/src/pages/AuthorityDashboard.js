@@ -40,7 +40,7 @@ L.Icon.Default.mergeOptions({
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
-const contractAddress="0xa6d19590f0ca1Ae447f143354e058F6ca6Cf14cB";
+const contractAddress="0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b";
 const AuthorityDashboard = () => {
   // State for dashboard data
   const [activeVendors, setActiveVendors] = useState(150);

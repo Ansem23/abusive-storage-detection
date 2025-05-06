@@ -172,7 +172,7 @@ contract MilkSupplyChain is Ownable {
             expired: false
         });
         
-        stockBalance[msg.sender] += quantity;
+        stockBalance[msg.sender] +=  quantity;
         batchesByOwner[msg.sender].push(batchId);
         
         emit Produced(batchId, msg.sender, quantity, block.timestamp);

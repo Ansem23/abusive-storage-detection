@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Add this import
 import { Bar, Pie } from "react-chartjs-2";
 import { ethers } from "ethers";
 import MilkSupplyChain from "../contracts/MilkSupplyChain.json";
@@ -12,8 +13,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useAppContext } from "../context/AppContext"; // Import the context
 
-const CONTRACT_ADDRESS = '0xFAcBc93EC946Ef2F709504F23eA41770a361A07e';
+const CONTRACT_ADDRESS = '0xEf8c6E9A29774F5Ff7a521b6A097108D8094933b';
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +28,8 @@ ChartJS.register(
 );
 
 const ProducerDashboard = () => {
+  const { declareNewStock, viewPastDeclarations } = useAppContext(); // Destructure the functions
+
   const [userName, setUserName] = useState("");
   const [currentStock, setCurrentStock] = useState(0);
   const [declaredEntries, setDeclaredEntries] = useState(0);
@@ -136,7 +140,18 @@ const ProducerDashboard = () => {
       ],
     };
   };
-  
+
+  const handleDeclareStock = async () => {
+    // Example usage of declareNewStock
+    const quantity = 100; // Replace with actual input
+    const batchId = "batch123"; // Replace with actual input
+    await declareNewStock(quantity, batchId);
+  };
+
+  const handleViewDeclarations = async () => {
+    // Example usage of viewPastDeclarations
+    await viewPastDeclarations();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -193,10 +208,12 @@ const ProducerDashboard = () => {
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <button className="bg-[#1957a8] text-white py-2 px-4 rounded-lg shadow hover:bg-[#164a8e] text-sm">
-          ➕ Declare New Stock Movement
-        </button>
-        <button className="bg-[#978f7c] text-white py-2 px-4 rounded-lg shadow hover:bg-[#887f6c] text-sm">
+        <Link
+             to="/Stocks"
+                   className="bg-[#1957a8] text-white py-3 px-4 rounded-lg shadow hover:bg-[#164a8e]"
+                 >🧾 declareNewStock</Link>
+        <button className="bg-[#978f7c] text-white py-2 px-4 rounded-lg shadow hover:bg-[#887f6c] text-sm"
+        onClick={handleViewDeclarations}>
           📂 View Past Declarations
         </button>
         <button className="bg-[#bc9c6f] text-white py-2 px-4 rounded-lg shadow hover:bg-[#ac8c5f] text-sm">
