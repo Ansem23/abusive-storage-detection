@@ -45,13 +45,13 @@ Make sure the following are installed on your machine:
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/Ansem23/abusive-storage-detection.git
+cd abusive-storage-detection
 ```
 
 2. **Install frontend dependencies**
 
-Navigate to the frontend directory (if your React app is in a subfolder like `client` or `frontend`) and run:
+Navigate to the frontend directory called `client`  and run:
 
 ```bash
 cd frontend
@@ -69,7 +69,7 @@ Keep Ganache running in the background
 
 4.**Compile and migrate the smart contracts**
 
-From the root of your project (where your truffle-config.js is located):
+From the root of the project (where your truffle-config.js is located):
 
 ```bash
 truffle compile
