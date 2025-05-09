@@ -100,6 +100,7 @@ Now that your contracts are deployed and Metamask is connected:
 ```bash
 npm start
 ```
+
 !!!
 Please note that the value of the contract adress in the frontend pages should change to reflect the deplyoed contract on your virtual blockchain. This can't be hardcoded because each time the contract is deployed the contract changes.
 !!!
